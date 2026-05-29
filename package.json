@@ -1,0 +1,14 @@
+{
+  "name": "site-premium-tcg",
+  "version": "2.0.0",
+  "private": true,
+  "dependencies": {
+    "stripe": "^14.0.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "@vercel/kv": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
