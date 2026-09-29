@@ -39,8 +39,11 @@ site-premium-tcg-style-apple/
 ├── index.html          ← SPA complète (tout le front)
 ├── vercel.json         ← Config déploiement
 ├── package.json        ← Deps Node (stripe)
+├── vault.html          ← Eden Vault : jeu d'ouverture de box (monnaie virtuelle EC)
+├── lib/vault-data.js   ← Catalogue du Vault : lots, box, probabilités (source unique)
 ├── CLAUDE.md           ← Ce fichier
 └── api/
+    ├── vault.js                ← Serveur du Vault (tirages, solde, codes, upgrade, admin)
     ├── create-payment.js       ← Stripe Checkout Session
     ├── create-paypal-order.js  ← PayPal Order
     └── ebay-prices.js          ← Prix live eBay (avec cache 1h)
@@ -190,6 +193,17 @@ Navigation via `go(pageName)`. Pages : `home`, `catalog`, `auth`, `dashboard`, `
 4. Framework : **Other**
 5. Ajouter les variables d'env (voir ci-dessus)
 6. Deploy → URL automatique, puis ajouter edenprojecttcg.com
+
+## Eden Vault (`/vault`) — phase de test, monnaie virtuelle
+- **EC (Eden Coins)** : monnaie fictive, 1 EC ≈ 1 €. Stockée en centimes dans Vercel KV (`vault:bal:{userId}`).
+- **Comptes** : réutilise `/api/register` + `/api/login` (même token `edn_token` que le site).
+- **Crédit** : codes à usage unique générés dans `/vault#/admin` (code = `ADMIN_CODE`), consommés via GETDEL atomique.
+- **Box** : définies dans `lib/vault-data.js`. Poids relatifs, RTP visé ~90 %. Box `daily` gratuite 1×/24 h (SET NX EX).
+- **Lots** : booster (valeur = cote display / nb boosters) ou display complète. Revente à 90 %.
+- **Upgrade** : chance = (valeur mise / valeur visée) × 0,9, plafonnée à 75 %.
+- **Provably fair** : `HMAC_SHA256(serverSeed, "clientSeed:nonce")` → 52 bits / 2^52. Hash du seed affiché avant, seed révélé à la rotation.
+- **Endpoint unique** `/api/vault` : `GET ?q=config|feed`, `POST {action: state|open|sell|upgrade|redeem|ship|rotate_seed|admin_*}`.
+- **Prérequis Vercel** : Vercel KV (Upstash Redis) connecté + `JWT_SECRET` + `ADMIN_CODE`.
 
 ## Contact
 Email : Edenprojectcompany@gmail.com
