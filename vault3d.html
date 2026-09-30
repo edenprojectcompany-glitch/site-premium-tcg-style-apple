@@ -24,6 +24,7 @@
   --foil:linear-gradient(115deg,var(--f1),var(--f2) 30%,var(--f3) 55%,var(--f4) 80%,var(--f1));
 }
 *{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
 html,body{height:100%;overflow:hidden;background:var(--ob);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 input{font:inherit;color:inherit}
@@ -146,6 +147,50 @@ a{color:inherit;text-decoration:none}
 .switch button{color:var(--gold);font-weight:700}
 .x{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:12px}
 
+/* Accueil nouveaux joueurs */
+.welcome{position:fixed;inset:0;z-index:25;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at 50% 40%,rgba(5,5,7,.35),rgba(5,5,7,.82));transition:opacity .7s}
+.welcome.off{opacity:0;pointer-events:none}
+.wl-box{width:min(560px,100%);padding:34px 32px 26px;border-radius:30px;text-align:center;border-color:rgba(217,178,106,.28);box-shadow:0 40px 120px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.06);animation:wlIn 1s var(--spring)}
+@keyframes wlIn{from{transform:translateY(30px) scale(.97);opacity:0}}
+.wl-mark{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;font:800 30px var(--serif);color:#1a1206;background:linear-gradient(135deg,#fff1c9,var(--gold) 50%,#8a6418);box-shadow:0 0 0 4px rgba(217,178,106,.18),0 10px 40px -8px rgba(217,178,106,.7)}
+.wl-box h1{font-family:var(--serif);font-weight:700;font-size:clamp(28px,5vw,40px);letter-spacing:-.02em;line-height:1.05}
+.wl-box h1 em{font-style:italic;background:linear-gradient(180deg,#fff,var(--gold2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.wl-box>p{color:var(--mute);font-size:14.5px;margin:10px auto 22px;max-width:420px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;text-align:left}
+.step{padding:14px;border-radius:16px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06)}
+.step b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:rgba(217,178,106,.15);color:var(--gold2);font-size:12px;margin-bottom:8px}
+.step span{display:block;font-weight:800;font-size:13px}
+.step small{display:block;color:var(--dim);font-size:11.5px;margin-top:3px;line-height:1.35}
+.wl-actions{display:flex;flex-direction:column;gap:10px}
+.wl-actions .btn{width:100%}
+.wl-skip{margin-top:14px;font-size:12.5px;color:var(--dim);font-weight:700}
+.wl-skip:hover{color:var(--mute)}
+.wl-note{margin-top:16px;font-size:11px;color:var(--dim);letter-spacing:.02em}
+/* Formulaires */
+.tabs{display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:14px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.07);margin-bottom:18px}
+.tabs button{height:40px;border-radius:10px;font-weight:800;font-size:13.5px;color:var(--mute);transition:all .35s var(--spring)}
+.tabs button.on{background:linear-gradient(135deg,#fff1c9,var(--gold));color:#1a1206}
+.fld{display:flex;flex-direction:column;gap:6px;text-align:left}
+.fld label{font-size:11.5px;font-weight:800;letter-spacing:.06em;color:var(--dim);text-transform:uppercase}
+.pw{position:relative}
+.pw .input{padding-right:52px}
+.pw button{position:absolute;right:8px;top:50%;transform:translateY(-50%);height:32px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:800;color:var(--mute)}
+.pw button:hover{color:var(--txt)}
+.hint{font-size:12px;color:var(--dim);text-align:left}
+textarea.input{height:auto;min-height:96px;padding:12px 16px;resize:vertical;font-family:inherit}
+/* Menu profil */
+.me{position:relative}
+.me-btn{padding:0 6px 0 6px}
+.me-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:900;color:#1a1206;background:linear-gradient(135deg,#fff1c9,var(--gold))}
+.me-menu{position:absolute;right:0;top:calc(100% + 10px);width:260px;padding:16px;border-radius:20px;display:none;flex-direction:column;gap:8px;z-index:12}
+.me-menu.on{display:flex}
+#userSlot{display:flex;gap:8px;align-items:center}
+.me-menu .who b{display:block;font-family:var(--serif);font-size:19px}
+.me-menu .who span{display:block;font-size:12px;color:var(--dim);overflow:hidden;text-overflow:ellipsis}
+.me-menu .btn{width:100%;justify-content:flex-start}
+.show-m{display:none!important}
+.me-menu hr{border:0;border-top:1px solid var(--gb);margin:4px 0}
+
 /* Chargement */
 .loader{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:radial-gradient(ellipse at 50% 45%,#141018,#050507 70%);transition:opacity 1.2s ease,visibility 1.2s}
 .loader.done{opacity:0;visibility:hidden}
@@ -170,6 +215,12 @@ a{color:inherit;text-decoration:none}
   .brand b{font-size:18px}.brand small{display:none}
   .pill{height:38px;padding:0 10px;font-size:13px}
   .hide-m{display:none!important}
+  .show-m{display:inline-flex!important}
+  .top .sp{flex:1;min-width:0}
+  #chestBtn{padding:0 10px}
+  .bal{padding-left:8px}
+  .bal .add{width:34px}
+  .me-menu{position:fixed;right:12px;top:62px;width:calc(100vw - 24px);max-width:320px}
   .panel{bottom:12px;padding:16px 16px 14px;border-radius:22px}
   .stats{grid-template-columns:repeat(2,1fr);margin:12px 0}
   .seg button{width:34px}
@@ -177,6 +228,10 @@ a{color:inherit;text-decoration:none}
   .nav-arrow.l{left:10px}.nav-arrow.r{right:10px}
   .counter{top:70px}
   .items{grid-template-columns:repeat(2,1fr)}
+  .steps{grid-template-columns:1fr}
+  .wl-box{padding:26px 20px 20px}
+  .step{display:grid;grid-template-columns:24px 1fr;column-gap:10px;align-items:center}
+  .step b{margin:0;grid-row:span 2}
 }
 </style>
 </head>
@@ -193,18 +248,19 @@ a{color:inherit;text-decoration:none}
 <div class="fallback" id="fallback">
   <div><h2 style="font-family:var(--serif);font-size:28px;margin-bottom:10px">La 3D n'a pas pu démarrer</h2>
   <p style="color:var(--mute);margin-bottom:18px">Ton navigateur ou ta connexion bloque le rendu 3D.</p>
-  <a class="btn btn-gold" href="/vault">Ouvrir la version classique</a></div>
+  <a class="btn btn-gold" href="/vault3d?lite=1">Réessayer en mode léger</a></div>
 </div>
 
 <div class="hud" id="hud">
   <div class="top">
     <a class="brand" href="/vault3d"><b>Eden Vault</b><small>LA CHAMBRE FORTE</small></a>
     <div class="sp"></div>
-    <a class="pill glass hide-m" href="/vault" title="Version classique">Version classique ↗</a>
-    <button class="pill glass" id="liteBtn" title="Change la qualité du rendu 3D"></button>
-    <button class="pill glass" id="soundBtn" aria-label="Son">🔊</button>
+    <button class="pill glass hide-m" id="liteBtn" title="Change la qualité du rendu 3D"></button>
+    <button class="pill glass hide-m" id="soundBtn" aria-label="Son">🔊</button>
     <button class="pill glass" id="chestBtn">Coffre <span class="badge" id="chestN">0</span></button>
     <div id="userSlot"></div>
+    <div class="me" id="meWrap" hidden><button class="pill glass me-btn" id="meBtn" aria-label="Mon compte"><span class="me-av" id="meAv">?</span></button>
+      <div class="me-menu glass" id="meMenu"><div class="who"><b id="meName"></b><span id="meMail"></span></div><hr><button class="btn btn-glass btn-sm" id="meCode">Entrer un code</button><button class="btn btn-glass btn-sm" id="meChest">Mon coffre</button><button class="btn btn-glass btn-sm show-m" id="meSound">Son : activé</button><button class="btn btn-glass btn-sm show-m" id="meLite">Mode léger</button><hr><button class="btn btn-glass btn-sm" id="meOut">Se déconnecter</button></div></div>
   </div>
 
   <button class="nav-arrow l glass" id="prevBtn" aria-label="Précédent">‹</button>
@@ -225,7 +281,7 @@ a{color:inherit;text-decoration:none}
       <div class="seg" id="seg"></div>
       <button class="btn btn-gold" id="openBtn">Ouvrir</button>
     </div>
-    <div class="p-foot"><span>Attrape le booster pour le faire tourner · glisse à côté pour changer</span><a href="/vault" class="hide-m">Upgrade · Classement · Profil ↗</a></div>
+    <div class="p-foot"><span>Attrape le booster pour le faire tourner · glisse à côté pour changer</span></div>
   </div>
 
   <div class="counter off" id="counter"></div>
@@ -257,36 +313,72 @@ a{color:inherit;text-decoration:none}
     <div class="eyebrow">Ton coffre</div>
     <h2>Collection</h2>
     <p style="color:var(--mute);font-size:13px;margin-top:4px" id="drSub"></p>
-    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-glass btn-sm" id="sellAllBtn">Tout revendre</button><a class="btn btn-glass btn-sm" href="/vault#/inventory">Livraison ↗</a></div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-glass btn-sm" id="sellAllBtn">Tout revendre</button><button class="btn btn-glass btn-sm" id="shipBtn">Me faire livrer</button></div>
     <div class="items" id="drItems"></div>
+  </div>
+</div>
+
+<div class="welcome off" id="welcome">
+  <div class="wl-box glass">
+    <div class="wl-mark">E</div>
+    <div class="eyebrow">Eden Vault · la chambre forte</div>
+    <h1>Bienvenue dans <em>la chambre forte</em></h1>
+    <p>Déchire des boosters virtuels en 3D et découvre les vrais boosters et displays Pokémon japonais et chinois qu'ils cachent.</p>
+    <div class="steps">
+      <div class="step"><b>1</b><span>Crée ton compte</span><small>30 secondes, juste un e-mail</small></div>
+      <div class="step"><b>2</b><span>Entre ton code</span><small>Il crédite tes Eden Coins</small></div>
+      <div class="step"><b>3</b><span>Ouvre tes boosters</span><small>Et garde ou revends tes lots</small></div>
+    </div>
+    <div class="wl-actions">
+      <button class="btn btn-gold" id="wlRegister">Créer mon compte</button>
+      <button class="btn btn-glass" id="wlLogin">J'ai déjà un compte</button>
+    </div>
+    <button class="wl-skip" id="wlSkip">Visiter la chambre forte d'abord →</button>
+    <div class="wl-note">Phase de test · monnaie virtuelle sans valeur réelle</div>
   </div>
 </div>
 
 <div class="modal" id="mAuth"><div class="modal-box glass">
   <button class="x glass" data-close>✕</button>
-  <h3 id="aTitle">Connexion</h3><p>Même compte que la version classique.</p>
-  <form id="aForm">
-    <input class="input" name="name" id="aName" placeholder="Prénom et nom" hidden>
-    <input class="input" name="email" type="email" placeholder="E-mail" required>
-    <input class="input" name="password" type="password" placeholder="Mot de passe" minlength="6" required>
+  <div class="tabs"><button type="button" data-tab="register">Inscription</button><button type="button" data-tab="login">Connexion</button></div>
+  <h3 id="aTitle">Connexion</h3><p id="aSub">Content de te revoir.</p>
+  <form id="aForm" novalidate>
+    <div class="fld" id="fName"><label for="aName">Prénom</label><input class="input" name="name" id="aName" autocomplete="given-name" placeholder="Ton prénom"></div>
+    <div class="fld"><label for="aEmail">E-mail</label><input class="input" name="email" id="aEmail" type="email" autocomplete="email" placeholder="toi@exemple.fr"></div>
+    <div class="fld"><label for="aPw">Mot de passe</label><div class="pw"><input class="input" name="password" id="aPw" type="password" autocomplete="current-password" placeholder="6 caractères minimum"><button type="button" data-eye="aPw">Voir</button></div></div>
+    <div class="fld" id="fPw2"><label for="aPw2">Confirme le mot de passe</label><div class="pw"><input class="input" name="password2" id="aPw2" type="password" autocomplete="new-password" placeholder="Le même"><button type="button" data-eye="aPw2">Voir</button></div></div>
+    <div class="hint" id="aForgot">Mot de passe oublié ? Demande à Vincent de te recréer un accès.</div>
     <div class="err" id="aErr"></div>
     <button class="btn btn-gold" id="aSubmit">Se connecter</button>
   </form>
-  <div class="switch"><span id="aSwT">Pas de compte ?</span> <button id="aSw">Créer un compte</button></div>
 </div></div>
+
 <div class="modal" id="mCode"><div class="modal-box glass">
   <button class="x glass" data-close>✕</button>
-  <h3>Ajouter des EC</h3><p>Entre ton code à usage unique. Monnaie virtuelle de test, sans valeur réelle.</p>
+  <div class="eyebrow" id="cEyebrow">Eden Coins</div>
+  <h3 id="cTitle">Ajouter des EC</h3><p id="cSub">Entre ton code à usage unique. Monnaie virtuelle de test, sans valeur réelle.</p>
   <form id="cForm">
-    <input class="input" name="code" placeholder="EDEN-XXXX-XXXX-XXXX" autocomplete="off" required style="font-family:ui-monospace,monospace;letter-spacing:.06em">
+    <input class="input" name="code" placeholder="EDEN-XXXX-XXXX-XXXX" autocomplete="off" required style="font-family:ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">
     <div class="err" id="cErr"></div>
-    <button class="btn btn-gold">Créditer</button>
+    <button class="btn btn-gold">Créditer mon solde</button>
+  </form>
+  <button class="wl-skip" id="cLater" style="width:100%" hidden>Pas de code ? Ouvre le Coffre du jour, il est gratuit →</button>
+</div></div>
+
+<div class="modal" id="mShip"><div class="modal-box glass">
+  <button class="x glass" data-close>✕</button>
+  <div class="eyebrow">Livraison</div>
+  <h3>Me faire livrer</h3><p id="shipSub"></p>
+  <form id="shipForm">
+    <div class="fld"><label for="shipAddr">Adresse complète</label><textarea class="input" id="shipAddr" name="address" placeholder="Nom, rue, code postal, ville, pays" required></textarea></div>
+    <div class="err" id="shipErr"></div>
+    <button class="btn btn-gold">Envoyer la demande</button>
   </form>
 </div></div>
 <div class="toasts" id="toasts"></div>
 
 <script>
-  // Filet de sécurité : si le module 3D ne démarre pas (CDN bloqué, WebGL absent), on propose la version classique
+  // Filet de sécurité : si le module 3D ne démarre pas (CDN bloqué, WebGL absent), on propose le mode léger
   setTimeout(() => { if (!window.__v3d) document.getElementById('fallback').classList.add('on'); }, 15000);
 </script>
 <script type="module">
@@ -323,7 +415,7 @@ async function api(action, body = {}) {
   if (S.token) h.Authorization = 'Bearer ' + S.token;
   const r = await fetch('/api/vault', { method: 'POST', headers: h, body: JSON.stringify({ action, ...body }) });
   const j = await r.json().catch(() => ({ error: 'Réponse invalide' }));
-  if (!r.ok) { if (r.status === 401) { logout(); openAuth(); } const e = new Error(j.error || 'Erreur'); e.data = j; throw e; }
+  if (!r.ok) { if (r.status === 401) { logout(); openAuth('login'); } const e = new Error(j.error || 'Erreur'); e.data = j; throw e; }
   return j;
 }
 const item = id => S.cfg.items[id];
@@ -957,7 +1049,7 @@ function prizeMesh(it) {
 async function openFlow() {
   if (S.mode !== 'browse') return;
   const st = stands[S.sel], b = st.box;
-  if (!S.token) return openAuth();
+  if (!S.token) return openAuth('register');
   const n = b.free ? 1 : S.count, cost = b.price * n;
   if (!b.free && (S.st?.balance ?? 0) + 1e-9 < cost) return openCode();
   S.mode = 'busy'; $('#openBtn').disabled = true;
@@ -1199,7 +1291,7 @@ function renderPanel() {
   document.querySelectorAll('#seg button').forEach(bt => bt.onclick = () => { S.count = +bt.dataset.n; sfx.click(); renderPanel(); });
   const btn = $('#openBtn');
   btn.disabled = S.mode !== 'browse';
-  if (!S.token) btn.innerHTML = 'Se connecter pour ouvrir';
+  if (!S.token) btn.innerHTML = 'Créer un compte pour ouvrir';
   else if (b.free) {
     const left = (S.st?.dailyNext || 0) - Date.now();
     if (left > 0) { const h = Math.floor(left / 3.6e6), m = Math.floor(left / 6e4) % 60; btn.innerHTML = `Prochain coffre dans ${h} h ${String(m).padStart(2, '0')}`; btn.disabled = true; }
@@ -1218,9 +1310,17 @@ function setBalance(v) {
 }
 function renderUser() {
   const slot = $('#userSlot');
-  if (!S.token || !S.st) { slot.innerHTML = '<button class="pill glass" id="loginBtn">Connexion</button>'; $('#loginBtn').onclick = openAuth; $('#chestN').textContent = '0'; return; }
-  if (!$('#balN')) { slot.innerHTML = `<div class="pill glass bal"><i class="coin"></i><span class="num" id="balN">${fmt(S.st.balance)}</span><button class="add" id="addBtn" aria-label="Ajouter des EC">+</button></div>`; shownBal = S.st.balance; $('#addBtn').onclick = openCode; }
+  if (!S.token || !S.st) {
+    slot.innerHTML = '<button class="pill glass" id="loginBtn">Connexion</button> <button class="pill glass hide-m" id="regBtn" style="border-color:rgba(217,178,106,.4);color:var(--gold2)">Créer un compte</button>';
+    $('#loginBtn').onclick = () => openAuth('login'); $('#regBtn').onclick = () => openAuth('register');
+    $('#chestN').textContent = '0'; $('#meWrap').hidden = true; return;
+  }
+  if (!$('#balN')) { slot.innerHTML = `<div class="pill glass bal"><i class="coin"></i><span class="num" id="balN">${fmt(S.st.balance)}</span><button class="add" id="addBtn" aria-label="Ajouter des EC">+</button></div>`; shownBal = S.st.balance; $('#addBtn').onclick = () => openCode(); }
   $('#chestN').textContent = S.st.inventory.length;
+  const u = S.user || {}, name = S.st.user?.name || u.name || 'Joueur';
+  $('#meWrap').hidden = false;
+  $('#meAv').textContent = name.split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase();
+  $('#meName').textContent = name; $('#meMail').textContent = u.email || '';
 }
 function bumpChest() { const b = $('#chestBtn'); b.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.15)' }, { transform: 'scale(1)' }], { duration: 500, easing: 'cubic-bezier(.34,1.56,.64,1)' }); }
 function toast(msg, cls = '') { const t = document.createElement('div'); t.className = 'toast glass ' + cls; t.textContent = msg; $('#toasts').appendChild(t); setTimeout(() => t.remove(), 3200); }
@@ -1240,35 +1340,97 @@ async function drawerSell(uids) {
   try { const r = await api('sell', { uids }); S.st = r.state; setBalance(S.st.balance); renderUser(); renderDrawer(); sfx.coin(); toast(`+${fmt(r.credited)} EC`, 'ok'); }
   catch (e) { toast(e.message, 'bad'); }
 }
-$('#chestBtn').onclick = () => { if (!S.token) return openAuth(); renderDrawer(); $('#drawer').classList.remove('off'); };
+$('#chestBtn').onclick = () => { if (!S.token) return openAuth('register'); renderDrawer(); $('#drawer').classList.remove('off'); };
 $('#drawerX').onclick = () => $('#drawer').classList.add('off');
 $('#sellAllBtn').onclick = () => { const inv = S.st?.inventory || []; if (inv.length && confirm(`Revendre les ${inv.length} objets ?`)) drawerSell(inv.map(o => o.uid)); };
 
-// Modales
+// ── Comptes ──────────────────────────────────────────────────
+try { S.user = JSON.parse(localStorage.getItem('edn_user') || 'null'); } catch {}
 let authMode = 'login';
-function openAuth() { setAuth('login'); $('#mAuth').classList.add('on'); }
-function setAuth(m) { authMode = m; const reg = m === 'register'; $('#aTitle').textContent = reg ? 'Créer un compte' : 'Connexion'; $('#aName').hidden = !reg; $('#aSubmit').textContent = reg ? 'Créer mon compte' : 'Se connecter'; $('#aSwT').textContent = reg ? 'Déjà inscrit ?' : 'Pas de compte ?'; $('#aSw').textContent = reg ? 'Se connecter' : 'Créer un compte'; $('#aErr').textContent = ''; }
-$('#aSw').onclick = () => setAuth(authMode === 'login' ? 'register' : 'login');
+function openAuth(mode = 'login') { setAuth(mode); $('#welcome').classList.add('off'); $('#mAuth').classList.add('on'); setTimeout(() => (mode === 'register' ? $('#aName') : $('#aEmail')).focus(), 60); }
+function setAuth(m) {
+  authMode = m; const reg = m === 'register';
+  document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === m));
+  $('#aTitle').textContent = reg ? 'Crée ton compte' : 'Connexion';
+  $('#aSub').textContent = reg ? 'Un compte = ton solde, ton coffre et ton historique.' : 'Content de te revoir.';
+  $('#fName').hidden = !reg; $('#fPw2').hidden = !reg; $('#aForgot').hidden = reg;
+  $('#aPw').autocomplete = reg ? 'new-password' : 'current-password';
+  $('#aSubmit').textContent = reg ? 'Créer mon compte' : 'Se connecter';
+  $('#aErr').textContent = '';
+}
+document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { setAuth(b.dataset.tab); sfx.click(); });
+document.querySelectorAll('[data-eye]').forEach(b => b.onclick = () => { const i = document.getElementById(b.dataset.eye); const show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.textContent = show ? 'Cacher' : 'Voir'; });
 $('#aForm').onsubmit = async e => {
   e.preventDefault();
-  const fd = Object.fromEntries(new FormData(e.target));
-  if (authMode === 'register' && !fd.name?.trim()) { $('#aErr').textContent = 'Indique ton prénom'; return; }
+  const fd = Object.fromEntries(new FormData(e.target)), reg = authMode === 'register';
+  const err = m => { $('#aErr').textContent = m; };
+  if (reg && !fd.name?.trim()) return err('Indique ton prénom');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fd.email || '')) return err('Adresse e-mail invalide');
+  if ((fd.password || '').length < 6) return err('Mot de passe : 6 caractères minimum');
+  if (reg && fd.password !== fd.password2) return err('Les deux mots de passe ne correspondent pas');
+  const btn = $('#aSubmit'); btn.disabled = true; err('');
   try {
-    const r = await fetch(authMode === 'login' ? '/api/login' : '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) });
+    const r = await fetch(reg ? '/api/register' : '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: fd.name, email: fd.email, password: fd.password }) });
     const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Erreur');
-    S.token = j.token; try { localStorage.setItem('edn_token', j.token); localStorage.setItem('edn_user', JSON.stringify(j.user)); } catch {}
+    S.token = j.token; S.user = j.user;
+    try { localStorage.setItem('edn_token', j.token); localStorage.setItem('edn_user', JSON.stringify(j.user)); } catch {}
     $('#mAuth').classList.remove('on'); e.target.reset();
-    await loadState(); toast(`Bienvenue ${j.user.name.split(' ')[0]}`, 'ok');
-  } catch (err) { $('#aErr').textContent = err.message; }
+    await loadState(); sfx.coin();
+    toast(`Bienvenue ${j.user.name.split(' ')[0]} ✦`, 'ok');
+    // Nouveau joueur sans solde : on l'invite directement à entrer son code
+    if (reg || (S.st && S.st.balance < .01)) openCode(true);
+  } catch (ex) { err(ex.message); }
+  finally { btn.disabled = false; }
 };
-function openCode() { if (!S.token) return openAuth(); $('#cErr').textContent = ''; $('#mCode').classList.add('on'); }
+function openCode(welcome = false) {
+  if (!S.token) return openAuth('register');
+  $('#cErr').textContent = '';
+  $('#cEyebrow').textContent = welcome ? 'Ton compte est prêt' : 'Eden Coins';
+  $('#cTitle').textContent = welcome ? 'Entre ton code' : 'Ajouter des EC';
+  $('#cSub').textContent = welcome ? 'Colle le code qu’on t’a envoyé pour recevoir tes Eden Coins et ouvrir tes premiers boosters.' : 'Entre ton code à usage unique. Monnaie virtuelle de test, sans valeur réelle.';
+  $('#cLater').hidden = !welcome;
+  $('#mCode').classList.add('on'); setTimeout(() => $('#cForm').code.focus(), 60);
+}
+$('#cLater').onclick = () => { $('#mCode').classList.remove('on'); const k = stands.findIndex(s => s.box.free); if (k >= 0) selectIndex(k); };
 $('#cForm').onsubmit = async e => {
   e.preventDefault();
   try { const r = await api('redeem', { code: e.target.code.value }); $('#mCode').classList.remove('on'); e.target.reset(); S.st = r.state; setBalance(S.st.balance); renderUser(); renderPanel(); sfx.coin(); toast(`+${fmt(r.credited)} EC crédités`, 'ok'); }
   catch (err) { $('#cErr').textContent = err.message; }
 };
 document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) m.classList.remove('on'); }));
-function logout() { S.token = null; S.st = null; try { localStorage.removeItem('edn_token'); } catch {} $('#userSlot').innerHTML = ''; renderUser(); renderPanel(); }
+function logout() {
+  S.token = null; S.st = null; S.user = null;
+  try { localStorage.removeItem('edn_token'); localStorage.removeItem('edn_user'); } catch {}
+  $('#userSlot').innerHTML = ''; $('#meMenu').classList.remove('on'); $('#drawer').classList.add('off');
+  renderUser(); renderPanel(); $('#welcome').classList.remove('off');
+}
+// Accueil
+$('#wlRegister').onclick = () => openAuth('register');
+$('#wlLogin').onclick = () => openAuth('login');
+$('#wlSkip').onclick = () => { $('#welcome').classList.add('off'); sfx.click(); };
+// Menu profil
+$('#meBtn').onclick = e => { e.stopPropagation(); $('#meMenu').classList.toggle('on'); };
+document.addEventListener('click', e => { if (!e.target.closest('#meWrap')) $('#meMenu').classList.remove('on'); });
+$('#meCode').onclick = () => { $('#meMenu').classList.remove('on'); openCode(); };
+$('#meChest').onclick = () => { $('#meMenu').classList.remove('on'); $('#chestBtn').click(); };
+$('#meOut').onclick = () => { logout(); toast('Déconnecté'); };
+const syncMe = () => { $('#meSound').textContent = S.muted ? 'Son : coupé' : 'Son : activé'; $('#meLite').textContent = LITE ? 'Passer en mode HD' : 'Passer en mode léger'; };
+$('#meSound').onclick = () => { $('#soundBtn').click(); syncMe(); };
+$('#meLite').onclick = () => $('#liteBtn').click();
+syncMe();
+// Livraison depuis le coffre
+$('#shipBtn').onclick = () => {
+  const inv = S.st?.inventory || [];
+  if (!inv.length) return toast('Ton coffre est vide', 'bad');
+  const total = inv.reduce((s, o) => s + item(o.itemId).value, 0);
+  $('#shipSub').textContent = `${inv.length} objet${inv.length > 1 ? 's' : ''} · ${fmt(total)} EC. En phase de test, la demande est transmise à l’équipe.`;
+  $('#shipErr').textContent = ''; $('#mShip').classList.add('on');
+};
+$('#shipForm').onsubmit = async e => {
+  e.preventDefault();
+  try { const r = await api('ship', { uids: (S.st?.inventory || []).map(o => o.uid), address: e.target.address.value }); S.st = r.state; $('#mShip').classList.remove('on'); e.target.reset(); renderUser(); renderDrawer(); toast('Demande d’envoi transmise ✦', 'ok'); }
+  catch (err) { $('#shipErr').textContent = err.message; }
+};
 async function loadState() { if (!S.token) { renderUser(); return; } try { S.st = await api('state'); } catch {} renderUser(); renderPanel(); }
 
 // ════════════════════════════════════════════════════════════
@@ -1349,6 +1511,7 @@ addEventListener('resize', resize);
   // Laisse le temps au panorama de charger avant de lever le rideau
   await Promise.race([allLoaded, sleep(8000)]);
   $('#loader').classList.add('done');
+  if (!S.token || !S.st) $('#welcome').classList.remove('off');
 })();
 </script>
 </body>

@@ -1926,6 +1926,8 @@ async function loadState() {
   if (!S.token) return;
   try { setState(await api('state'), { animate: false }); } catch {}
 }
+// Ce fichier ne sert plus que d'espace admin (/admin) : le jeu est sur /vault3d
+if (location.pathname.startsWith('/admin') && location.hash !== '#/admin') history.replaceState(null, '', '/admin#/admin');
 (async function boot() {
   try { S.cfg = await fetch('/api/vault?q=config').then(r => { if (!r.ok) throw 0; return r.json(); }); }
   catch { document.querySelector('main').innerHTML = '<div class="empty panel" style="margin-top:40px"><h3>Vault indisponible</h3><p>Le serveur de jeu ne répond pas. Réessaie dans un instant.</p></div>'; return; }

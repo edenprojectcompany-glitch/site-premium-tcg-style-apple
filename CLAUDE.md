@@ -39,7 +39,7 @@ site-premium-tcg-style-apple/
 ├── index.html          ← SPA complète (tout le front)
 ├── vercel.json         ← Config déploiement
 ├── package.json        ← Deps Node (stripe)
-├── vault.html          ← Eden Vault : jeu d'ouverture de box (monnaie virtuelle EC)
+├── vault.html          ← Espace admin du Vault (servi sur /admin : codes, crédits, envois)
 ├── lib/vault-data.js   ← Catalogue du Vault : lots, box, probabilités (source unique)
 ├── vault3d.html        ← Eden Vault 3D « la chambre forte » (Three.js, même API que /vault)
 ├── img/packs/          ← Visuels officiels des sachets (JP pokemon-card.com, CN pokemon.cn)
@@ -200,13 +200,14 @@ Navigation via `go(pageName)`. Pages : `home`, `catalog`, `auth`, `dashboard`, `
 ## Eden Vault (`/vault`) — phase de test, monnaie virtuelle
 - **EC (Eden Coins)** : monnaie fictive, 1 EC ≈ 1 €. Stockée en centimes dans Vercel KV (`vault:bal:{userId}`).
 - **Comptes** : réutilise `/api/register` + `/api/login` (même token `edn_token` que le site).
-- **Crédit** : codes à usage unique générés dans `/vault#/admin` (code = `ADMIN_CODE`), consommés via GETDEL atomique.
+- **Crédit** : codes à usage unique générés dans `/admin` (code = `ADMIN_CODE`), consommés via GETDEL atomique.
 - **Box** : définies dans `lib/vault-data.js`. Poids relatifs, RTP visé ~90 %. Box `daily` gratuite 1×/24 h (SET NX EX).
 - **Lots** : booster (valeur = cote display / nb boosters) ou display complète. Revente à 90 %.
 - **Upgrade** : chance = (valeur mise / valeur visée) × 0,9, plafonnée à 75 %.
 - **Provably fair** : `HMAC_SHA256(serverSeed, "clientSeed:nonce")` → 52 bits / 2^52. Hash du seed affiché avant, seed révélé à la rotation.
 - **Endpoint unique** `/api/vault` : `GET ?q=config|feed`, `POST {action: state|open|sell|upgrade|redeem|ship|rotate_seed|admin_*}`.
 - **Prérequis Vercel** : Vercel KV (Upstash Redis) connecté + `JWT_SECRET` + `ADMIN_CODE`.
+- **Jeu** : uniquement la version 3D `/vault3d` (la racine et `/vault` y redirigent). Accueil nouveaux joueurs, inscription/connexion, code de bienvenue, menu profil.
 - **Version 3D** `/vault3d` : carrousel de socles, sachets 3D à déchirer, lot réel qui sort du sachet. Bloom + miroir au sol désactivé sur mobile.
 
 ## Contact

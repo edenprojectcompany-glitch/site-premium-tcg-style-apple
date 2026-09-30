@@ -29,7 +29,21 @@
       "dest": "/api/$1.js"
     },
     {
+      "src": "/",
+      "status": 307,
+      "headers": {
+        "Location": "/vault3d"
+      }
+    },
+    {
       "src": "/vault/?",
+      "status": 308,
+      "headers": {
+        "Location": "/vault3d"
+      }
+    },
+    {
+      "src": "/admin/?",
       "dest": "/vault.html"
     },
     {
