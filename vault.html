@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Eden Vault — Ouvre. Révèle. Collectionne.</title>
-<meta name="description" content="Eden Vault : ouverture de box Pokémon JP & CN en monnaie virtuelle. Boosters, displays, upgrades — tirages provably fair.">
+<meta name="description" content="Eden Vault : boosters virtuels Pokémon JP & CN en monnaie virtuelle. Boosters, displays, upgrades — tirages provably fair.">
 <meta name="theme-color" content="#0a0a0c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -305,22 +305,55 @@ main{position:relative;z-index:2;padding:calc(var(--hdr) + var(--tick) + 28px) 2
 .ov-title{position:fixed;top:28px;z-index:3;pointer-events:none;left:0;right:0;text-align:center}
 .ov-title h2{font-family:var(--serif);font-weight:600;font-size:26px;letter-spacing:-.02em}
 .ov-skip{position:fixed;top:24px;right:24px;z-index:3}
-.reels{margin:auto 0;width:100%;display:flex;flex-direction:column;gap:12px;perspective:1100px}
-.reel{--W:170px;position:relative;height:calc(var(--W) * 1.25);overflow:hidden;transform-style:preserve-3d;
-  mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
-.reel::before{content:'';position:absolute;left:0;right:0;top:50%;height:70%;transform:translateY(-50%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.03) 30%,rgba(255,255,255,.03) 70%,transparent);border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05)}
-.reel-track{position:absolute;inset:0;transform-style:preserve-3d}
-.cell{--c:var(--t-common);position:absolute;left:50%;top:50%;width:calc(var(--W) - 14px);margin-top:calc(var(--W) * -.55);will-change:transform,opacity;backface-visibility:hidden}
-.cell .cbox{position:relative;border-radius:16px;padding:8px 8px 10px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.08);overflow:hidden}
-.cell .cbox::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--c);box-shadow:0 0 22px 4px var(--c)}
-.cell .cbox::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 110%,color-mix(in srgb,var(--c) 35%,transparent),transparent 60%)}
-.cell .cname{position:relative;font-size:11px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mute);margin-top:2px}
-.cell.win .cbox{border-color:var(--c);box-shadow:0 0 0 2px var(--c),0 0 60px -6px var(--c);animation:winPulse 1s ease-in-out infinite}
-@keyframes winPulse{50%{box-shadow:0 0 0 2px var(--c),0 0 90px 4px var(--c)}}
-.marker{position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);z-index:5;pointer-events:none;background:linear-gradient(180deg,transparent,#fff 15%,#fff 85%,transparent);box-shadow:0 0 16px rgba(255,255,255,.8)}
-.marker::before,.marker::after{content:'';position:absolute;left:50%;width:0;height:0;border:9px solid transparent;transform:translateX(-50%)}
-.marker::before{top:0;border-top-color:#fff}
-.marker::after{bottom:0;border-bottom-color:#fff}
+/* Booster virtuel : sachet à déchirer, le vrai booster gagné est à l'intérieur */
+.pk-stage{margin:auto 0;display:none;flex-direction:column;align-items:center;gap:20px;padding:0 16px;perspective:1400px}
+.pk-stage.on{display:flex}
+.pk-count{font-size:11.5px;font-weight:900;letter-spacing:.24em;color:var(--dim)}
+.pk{--strip:15%;--p:0;position:relative;width:min(300px,66vw);aspect-ratio:5/8.2;container-type:inline-size;
+  transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s var(--spring);touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;animation:pkIn 1s var(--spring)}
+.pk.drag{cursor:grabbing}
+@keyframes pkIn{from{transform:translateY(80px) rotateX(35deg) scale(.7);opacity:0}}
+.pk::after{content:'';position:absolute;left:8%;right:8%;bottom:84%;height:130%;z-index:0;pointer-events:none;background:linear-gradient(to top,var(--tc),transparent 80%);filter:blur(14px);opacity:0;mix-blend-mode:screen;transition:opacity .5s}
+.pk.torn::after{opacity:.6}
+.pk.present::after{opacity:0}
+.pk-back{position:absolute;inset:0;border-radius:10px;background:linear-gradient(160deg,#1c1c24,#0a0a0d);box-shadow:0 50px 90px -24px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.06)}
+.pk-light{position:absolute;left:4%;right:4%;top:6%;height:34%;z-index:1;border-radius:50%;background:radial-gradient(ellipse at 50% 20%,var(--tc),transparent 70%);filter:blur(8px);opacity:calc(var(--p) * .7)}
+.pk.torn .pk-light{opacity:1;transform:scale(1.25)}
+.pk-prize{position:absolute;left:9%;right:9%;top:13%;height:72%;z-index:1;display:grid;place-items:center;transition:transform 1.1s var(--spring),filter .8s}
+.pk-prize .art{width:100%}
+.pk.rise .pk-prize{transform:translateY(-60%)}
+.pk.present .pk-prize{z-index:8;transform:translateY(-14%) scale(1.32);filter:drop-shadow(0 0 36px var(--tc))}
+.pk-front{position:absolute;left:0;right:0;top:var(--strip);bottom:0;z-index:2;border-radius:0 0 10px 10px;overflow:hidden;
+  background:linear-gradient(155deg,color-mix(in srgb,var(--c1) 78%,#000),#14141b 48%,color-mix(in srgb,var(--c2) 72%,#000));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),inset 0 -40px 70px rgba(0,0,0,.45)}
+.pk-front::before{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.22) 45%,transparent 60%);background-size:300% 100%;animation:pkGloss 4.5s ease-in-out infinite}
+@keyframes pkGloss{0%{background-position:120% 0}100%{background-position:-120% 0}}
+.pk-holo{position:absolute;inset:0;mix-blend-mode:color-dodge;opacity:.55;background:linear-gradient(115deg,transparent 20%,rgba(127,217,255,.5),rgba(255,179,230,.5),rgba(168,255,212,.45),transparent 80%);background-size:250% 250%;background-position:var(--mx,50%) var(--my,50%)}
+.pk-emb{position:absolute;inset:0 0 10% 0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 12%;gap:10px}
+.pk-emb .logo-mark{width:17cqi;height:17cqi;border-radius:5cqi}
+.pk-emb small{font-size:3.4cqi;font-weight:900;letter-spacing:.34em;color:rgba(255,255,255,.72)}
+.pk-emb b{font-family:var(--serif);font-size:11cqi;line-height:1;font-weight:700;color:#fff;text-shadow:0 2px 24px rgba(0,0,0,.55);letter-spacing:-.02em}
+.pk-emb em{font-style:normal;font-size:3.3cqi;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:5px 10px;border-radius:99px;border:1px solid rgba(255,255,255,.32);color:#fff;background:rgba(0,0,0,.28)}
+.pk-crimp{height:7cqi;flex:none;background:repeating-linear-gradient(90deg,rgba(255,255,255,.6) 0 2px,rgba(0,0,0,.28) 2px 4px),linear-gradient(180deg,#e7e9ef,#8a8d98);background-blend-mode:overlay}
+.pk-front .pk-crimp{position:absolute;left:0;right:0;bottom:0}
+.pk-top{position:absolute;left:0;right:0;top:0;height:var(--strip);z-index:3;display:flex;flex-direction:column;border-radius:10px 10px 0 0;overflow:hidden;
+  background:linear-gradient(155deg,color-mix(in srgb,var(--c1) 78%,#000),color-mix(in srgb,var(--c2) 70%,#000));box-shadow:inset 0 0 0 1px rgba(255,255,255,.2);
+  transform-origin:0 100%;transform:translateY(calc(var(--p) * -5px)) rotate(calc(var(--p) * -8deg));transition:transform .12s}
+.pk-cut{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:3cqi;font-weight:900;letter-spacing:.3em;color:rgba(255,255,255,.8);border-bottom:1.5px dashed rgba(255,255,255,.55)}
+.pk.torn .pk-top{animation:stripFly .75s var(--spring) forwards}
+@keyframes stripFly{to{transform:translate(75%,-170%) rotate(32deg);opacity:0}}
+.pk-tear{position:absolute;left:0;top:var(--strip);height:3px;margin-top:-1.5px;z-index:4;width:calc(var(--p) * 100%);border-radius:2px;background:#fff;box-shadow:0 0 10px 2px var(--tc),0 0 34px 10px var(--tc)}
+.pk.torn .pk-tear{opacity:0;transition:opacity .5s}
+.pk.present .pk-front,.pk.present .pk-back,.pk.present .pk-light{transform:translateY(38%) rotateX(-18deg);opacity:0;transition:transform .9s var(--spring),opacity .7s}
+.pk-hint{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:var(--mute);transition:opacity .4s}
+.pk-hint i{font-style:normal;animation:hintMove 1.4s ease-in-out infinite}
+@keyframes hintMove{50%{transform:translateX(8px)}}
+.pk.torn~.pk-hint,.pk.torn~.pk-actions{opacity:0;pointer-events:none}
+.pk-actions{display:flex;gap:10px;transition:opacity .4s}
+.pk-name{position:absolute;left:50%;bottom:-18%;z-index:9;transform:translateX(-50%);white-space:nowrap;text-align:center;opacity:0;transition:opacity .6s .3s}
+.pk-name b{display:block;font-weight:800;font-size:16px}
+.pk-name span{font-size:11px;font-weight:900;letter-spacing:.2em;color:var(--tc)}
+.pk.present .pk-name{opacity:1}
 /* Reveal */
 .reveal{margin:auto 0;display:none;flex-direction:column;align-items:center;width:100%;padding:0 20px}
 .reveal.on{display:flex}
@@ -476,7 +509,6 @@ main{position:relative;z-index:2;padding:calc(var(--hdr) + var(--tick) + 28px) 2
   .stage{min-height:340px}
   .grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
   .tile{padding:10px 10px 12px;border-radius:15px}
-  .reel{--W:118px}
   .rcard{width:150px}
   .rcards{gap:10px}
   .upg{grid-template-columns:1fr 1fr;gap:10px}
@@ -495,7 +527,6 @@ main{position:relative;z-index:2;padding:calc(var(--hdr) + var(--tick) + 28px) 2
   .rcards.many .rcard{width:calc(50% - 5px);max-width:170px}
   .rcards.many .rcard-name{font-size:12.5px}
   .rcards.many .rcard-in{padding:10px 10px 12px;border-radius:16px}
-  .cell .lang{display:none}
   .sec-h{flex-direction:column;align-items:flex-start;gap:6px}
   .kv{grid-template-columns:1fr}
 }
@@ -537,7 +568,7 @@ main{position:relative;z-index:2;padding:calc(var(--hdr) + var(--tick) + 28px) 2
 <div class="ov" id="ov">
   <div class="ov-title"><div class="eyebrow" id="ovEyebrow">Ouverture</div><h2 id="ovTitle"></h2></div>
   <button class="btn btn-ghost btn-sm ov-skip" id="ovSkip">Passer ⏭</button>
-  <div class="reels" id="reels"></div>
+  <div class="pk-stage" id="pkStage"></div>
   <div class="reveal" id="reveal">
     <div class="rays" id="rays"></div>
     <div class="slam" id="slam"></div>
@@ -710,6 +741,8 @@ const sfx = (() => {
     click() { if (!on()) return; const t = ctx.currentTime; tone(880, t, .06, { type: 'triangle', vol: .08 }); },
     whoosh() { if (!on()) return; const t = ctx.currentTime; noise(t, .6, { vol: .18, freq: 400, sweep: 5000, q: .8 }); },
     rumble() { if (!on()) return; const t = ctx.currentTime; tone(55, t, 1.1, { type: 'sawtooth', vol: .12, slide: 1.8 }); noise(t, 1, { vol: .08, freq: 200, type: 'lowpass' }); },
+    crackle() { if (!on()) return; const t = ctx.currentTime; noise(t, .045, { vol: .16, freq: 2600 + Math.random() * 2400, q: 2.5 }); },
+    tear() { if (!on()) return; const t = ctx.currentTime; noise(t, .35, { vol: .32, freq: 1800, sweep: 7000, q: 1.2 }); noise(t + .05, .25, { vol: .18, freq: 5000, type: 'highpass' }); },
     burst() { if (!on()) return; const t = ctx.currentTime; noise(t, .7, { vol: .35, freq: 8000, sweep: 300, type: 'lowpass' }); tone(90, t, .6, { type: 'sine', vol: .35, slide: .4 }); },
     coin() { if (!on()) return; const t = ctx.currentTime; tone(1318.5, t, .12, { type: 'square', vol: .05 }); tone(1975.5, t + .07, .3, { type: 'square', vol: .05 }); },
     lose() { if (!on()) return; const t = ctx.currentTime; tone(330, t, .5, { type: 'sawtooth', vol: .06, slide: .5 }); tone(247, t + .15, .6, { type: 'sawtooth', vol: .05, slide: .5 }); },
@@ -767,7 +800,7 @@ document.addEventListener('pointerout', e => {
 // HEADER, NAV, SOLDE
 // ════════════════════════════════════════════════════════════
 const NAV = [
-  { id: 'lobby', label: 'Box', icon: ICON.box, href: '#/' },
+  { id: 'lobby', label: 'Boosters', icon: ICON.box, href: '#/' },
   { id: 'upgrade', label: 'Upgrade', icon: ICON.up, href: '#/upgrade' },
   { id: 'inventory', label: 'Coffre', icon: ICON.bag, href: '#/inventory' },
   { id: 'ranking', label: 'Classement', icon: ICON.trophy, href: '#/ranking' },
@@ -971,15 +1004,15 @@ PAGES.lobby = () => {
     <div class="hero-main panel">
       <span class="test-badge">● PHASE DE TEST · MONNAIE VIRTUELLE</span>
       <h1>Ouvre.<br><em class="foil-text">Révèle.</em><br>Collectionne.</h1>
-      <p>Des box remplies de vrais boosters et displays Pokémon japonais et chinois. Chaque tirage est vérifiable, chaque lot existe en stock.</p>
+      <p>Déchire un booster virtuel et découvre le vrai booster ou la display Pokémon JP &amp; CN qu’il cache. Chaque tirage est vérifiable, chaque lot existe en stock.</p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="#/box/japan">Ouvrir une box</a>
+        <a class="btn btn-primary" href="#/box/japan">Ouvrir un booster</a>
         <a class="btn btn-ghost" href="#/upgrade">Tenter un upgrade</a>
       </div>
       <div class="hero-stats">
-        <div><b>${S.cfg.boxes.length - 1}</b><span>box disponibles</span></div>
+        <div><b>${S.cfg.boxes.length - 1}</b><span>boosters virtuels</span></div>
         <div><b>90 %</b><span>retour joueur moyen</span></div>
-        <div><b>${stats ? stats.opened : Object.keys(S.cfg.items).filter(k => !k.startsWith('c')).length}</b><span>${stats ? 'box ouvertes' : 'lots différents'}</span></div>
+        <div><b>${stats ? stats.opened : Object.keys(S.cfg.items).filter(k => !k.startsWith('c')).length}</b><span>${stats ? 'boosters ouverts' : 'lots différents'}</span></div>
       </div>
     </div>
     <div class="daily panel" id="dailyCard">
@@ -990,7 +1023,7 @@ PAGES.lobby = () => {
       <div class="daily-foot"><div class="countdown num" id="dailyCd"></div><button class="btn btn-primary btn-sm" id="dailyBtn">Ouvrir</button></div>
     </div>
   </div>
-  <div class="sec-h"><div><div class="eyebrow">Collection</div><h2>Choisis ta box</h2></div><p>Taux affichés · tirages provably fair</p></div>
+  <div class="sec-h"><div><div class="eyebrow">Collection</div><h2>Choisis ton booster virtuel</h2></div><p>Un vrai booster à l’intérieur · taux affichés</p></div>
   <div class="boxes">${boxes.map(b => `
     <a class="bcard" href="#/box/${b.id}" style="--c1:${b.theme[0]};--c2:${b.theme[1]}">
       <div class="bcard-in">
@@ -1034,15 +1067,15 @@ PAGES.box = (soft) => {
   const rows = [...b.table].sort((x, y) => item(y.itemId).value - item(x.itemId).value);
   const byTier = TIERS.map(t => ({ t, p: b.table.filter(r => r.tier === t).reduce((s, r) => s + r.p, 0) })).filter(x => x.p > 0);
   $('#p-box').innerHTML = `
-  <a class="back" href="#/">← Toutes les box</a>
+  <a class="back" href="#/">← Tous les boosters</a>
   <div class="box-top">
     <div class="stage" id="stage">
       <div class="stage-fallback" id="stageFallback">${art(item(rows[0].itemId))}</div>
       <div class="stage-rtp">${b.free ? '<span class="chip ok">GRATUIT / 24 H</span>' : `<span class="chip">RTP ${Math.round(b.rtp * 100)} %</span>`}<span class="chip ok">${ICON.shield} Fair</span></div>
-      <div class="stage-hint">Glisse pour tourner la box</div>
+      <div class="stage-hint">Glisse pour tourner le booster</div>
     </div>
     <div class="box-side panel">
-      <div class="eyebrow">${b.free ? 'Offert' : 'Mystery box'}</div>
+      <div class="eyebrow">${b.free ? 'Offert' : 'Booster virtuel'}</div>
       <h1>${esc(b.name)}</h1>
       <div class="tag">${esc(b.tagline)}</div>
       <div class="box-meta">
@@ -1105,100 +1138,125 @@ async function openCurrent() {
   catch (err) { S.busy = false; updateOpenBtn(); if (err.data?.dailyNext) { S.st.dailyNext = err.data.dailyNext; } toast(err.message, 'err'); return; }
   // Débit visuel immédiat, les gains arrivent après la révélation
   if (!b.free) animateBalance(S.shownBal - cost, { bump: false });
-  if (!S.quick && stage3d?.visible) await stage3d.open();
   await runOpening(b, resp.results, resp.state);
   S.busy = false;
 }
 
 // ════════════════════════════════════════════════════════════
-// ROULETTE 3D (cylindre CSS) + RÉVÉLATION
+// OUVERTURE DE BOOSTER VIRTUEL (sachet à déchirer → vrai booster à l'intérieur)
 // ════════════════════════════════════════════════════════════
-const WIN_AT = 52, CELLS = 60;
-let skipReq = false;
-function randomFrom(b) {
-  const r = Math.random();
-  let acc = 0;
-  for (const row of b.table) { acc += row.p; if (r < acc) return row; }
-  return b.table[b.table.length - 1];
-}
+let skipReq = false, autoAll = false, curAutoTear = null;
 async function runOpening(b, results, newState) {
-  const ov = $('#ov'), reels = $('#reels');
-  skipReq = false;
+  const ov = $('#ov'), st = $('#pkStage');
+  skipReq = false; autoAll = S.quick;
   $('#reveal').classList.remove('on'); $('#rays').classList.remove('on');
-  $('#ovEyebrow').textContent = b.free ? 'Coffre du jour' : `Ouverture ×${results.length}`;
+  $('#ovEyebrow').textContent = b.free ? 'Coffre du jour' : results.length > 1 ? `Boosters virtuels ×${results.length}` : 'Booster virtuel';
   $('#ovTitle').textContent = b.name;
-  reels.style.display = ''; $('#ovSkip').style.display = '';
-  const mobile = isMobile();
-  const W = results.length > 1 ? (mobile ? 92 : Math.max(110, 150 - results.length * 8)) : (mobile ? 118 : 170);
-  reels.innerHTML = results.map((r, k) => {
-    const cells = Array.from({ length: CELLS }, (_, i) => i === WIN_AT ? { itemId: r.item, tier: r.tier } : randomFrom(b));
-    // Leurres autour du gagnant : quelques gros lots proches du marqueur pour la tension (ils existent dans la box)
-    return `<div class="reel" style="--W:${W}px" data-k="${k}"><div class="marker"></div><div class="reel-track">${cells.map((c, i) => {
-      const it = item(c.itemId);
-      return `<div class="cell t-${c.tier}" data-i="${i}"><div class="cbox">${art(it)}<div class="cname">${esc(it.short)}</div></div></div>`;
-    }).join('')}</div></div>`;
-  }).join('');
+  $('#ovSkip').style.display = '';
+  st.classList.add('on');
   ov.classList.add('on');
   document.body.style.overflow = 'hidden';
-  sfx.whoosh();
-  const dur = S.quick ? 1300 : 6200;
-  await Promise.all($$('.reel', reels).map((el, k) => spinReel(el, W, dur + k * 380, k === 0)));
-  await sleep(S.quick ? 200 : 650);
+  for (let i = 0; i < results.length; i++) await openOnePack(b, results[i], i, results.length);
+  st.classList.remove('on'); st.innerHTML = '';
   await showReveal(b, results, newState);
 }
-function spinReel(el, W, dur, sound) {
+function packHTML(b, r, i, n) {
+  const it = item(r.item);
+  return `<div class="pk-count">${n > 1 ? `BOOSTER ${i + 1} / ${n}` : b.free ? 'COFFRE DU JOUR' : 'BOOSTER VIRTUEL'}</div>
+  <div class="pk" style="--c1:${b.theme[0]};--c2:${b.theme[1]};--tc:${TIER_COLOR[r.tier]}">
+    <div class="pk-back"></div><div class="pk-light"></div>
+    <div class="pk-prize t-${r.tier}">${art(it)}</div>
+    <div class="pk-front"><div class="pk-holo"></div>
+      <div class="pk-emb"><span class="logo-mark"></span><small>EDEN VAULT</small><b>${esc(b.name)}</b><em>${b.free ? 'Un cadeau à l’intérieur' : '1 booster réel à l’intérieur'}</em></div>
+      <div class="pk-crimp"></div></div>
+    <div class="pk-tear"></div>
+    <div class="pk-top"><div class="pk-crimp"></div><div class="pk-cut">✂ DÉCHIRER ICI</div></div>
+    <div class="pk-name"><span>${TIER_FR[r.tier].toUpperCase()}</span><b>${esc(it.name)}</b></div>
+  </div>
+  <div class="pk-hint">Glisse sur le booster pour le déchirer <i>→</i></div>
+  <div class="pk-actions"><button class="btn btn-ghost btn-sm" data-pk="tear">Déchirer</button>${n > 1 ? '<button class="btn btn-ghost btn-sm" data-pk="all">Tout ouvrir</button>' : ''}</div>`;
+}
+function openOnePack(b, r, i, n) {
   return new Promise(resolve => {
-    const cells = $$('.cell', el), vw = el.clientWidth, R = Math.max(vw * .62, W * 3.4);
-    const target = WIN_AT * W + (Math.random() - .5) * W * .72;
-    const start = W * 2, t0 = performance.now();
-    let lastIdx = -1, lastT = t0;
-    const layout = pos => {
-      for (const c of cells) {
-        const d = (+c.dataset.i) * W - pos;
-        if (Math.abs(d) > vw * .75 + W) { if (c._v !== 0) { c.style.visibility = 'hidden'; c._v = 0; } continue; }
-        if (c._v !== 1) { c.style.visibility = ''; c._v = 1; }
-        const a = d / R;
-        const x = R * Math.sin(a), z = R * (Math.cos(a) - 1);
-        const center = Math.max(0, 1 - Math.abs(d) / (W * 1.2));
-        c.style.transform = `translate3d(calc(-50% + ${x.toFixed(1)}px),0,${z.toFixed(1)}px) rotateY(${a.toFixed(4)}rad) scale(${(1 + center * .1).toFixed(3)})`;
-        c.style.opacity = Math.max(0, Math.cos(a) * 1.35 - .35).toFixed(3);
-        c.style.filter = `brightness(${(.55 + center * .55).toFixed(2)})`;
-      }
+    const st = $('#pkStage');
+    st.innerHTML = packHTML(b, r, i, n);
+    const pk = $('.pk', st);
+    const fast = () => S.quick || autoAll || skipReq;
+    let p = 0, drag = null, done = false, lastCrack = 0;
+    const setP = v => { p = v; pk.style.setProperty('--p', v.toFixed(3)); };
+
+    const doTear = async () => {
+      if (done) return;
+      done = true; drag = null; setP(1);
+      pk.classList.add('torn'); pk.classList.remove('drag');
+      sfx.tear(); vibrate(30);
+      const f = fast() ? .5 : 1;
+      await sleep(380 * f);
+      pk.classList.add('rise'); sfx.whoosh();
+      await sleep(1000 * f);
+      pk.classList.add('present');
+      const lvl = TIERS.indexOf(r.tier), color = TIER_COLOR[r.tier];
+      sfx.reveal(r.tier);
+      if (lvl >= 3) { flash(color); shake($('#ov')); vibrate(lvl === 4 ? [80, 40, 80, 40, 200] : [60, 30, 120]); sfx.burst(); confetti({ n: lvl === 4 ? 260 : 130, colors: [color, '#fff', lvl === 4 ? '#ffb35c' : '#c9a8ff'], sparks: lvl * 25, y: .42, spread: lvl === 4 ? 1.4 : 1 }); }
+      else if (lvl === 2) confetti({ n: 60, colors: [color, '#fff', '#7fd9ff'], sparks: 30, y: .42 });
+      await sleep((lvl >= 3 ? 1900 : 1200) * f);
+      curAutoTear = null;
+      resolve();
     };
-    // Courbe : départ rapide, longue décélération (quint) → suspense sur la fin
-    const ease = t => 1 - Math.pow(1 - t, 4.2);
-    const frame = now => {
-      let t = Math.min(1, (now - t0) / dur);
-      if (skipReq) t = 1;
-      const pos = start + (target - start) * ease(t);
-      layout(pos);
-      const idx = Math.round(pos / W);
-      if (idx !== lastIdx) {
-        if (sound && lastIdx !== -1) { const speed = Math.min(1, 60 / Math.max(16, now - lastT)); sfx.tick(speed); if (t > .6) vibrate(4); }
-        lastIdx = idx; lastT = now;
-      }
-      if (t < 1) return requestAnimationFrame(frame);
-      // Recentrage fin sur le lot gagnant
-      const from = pos, to = WIN_AT * W, s0 = performance.now(), sd = skipReq ? 1 : 420;
-      const settle = n2 => {
-        const k = Math.min(1, (n2 - s0) / sd), e = 1 - Math.pow(1 - k, 3);
-        layout(from + (to - from) * e);
-        if (k < 1) return requestAnimationFrame(settle);
-        cells[WIN_AT].classList.add('win');
-        resolve();
+    // Déchirure automatique (bouton, mode rapide, « Tout ouvrir »)
+    const autoTear = () => {
+      if (done || drag) return;
+      const t0 = performance.now(), d = fast() ? 280 : 560;
+      const step = now => {
+        if (done) return;
+        const k = Math.min(1, (now - t0) / d);
+        setP(Math.max(p, k));
+        if (k - lastCrack > .1) { sfx.crackle(); lastCrack = k; }
+        if (k < 1) requestAnimationFrame(step); else doTear();
       };
-      requestAnimationFrame(settle);
+      requestAnimationFrame(step);
     };
-    layout(start);
-    requestAnimationFrame(frame);
+    curAutoTear = autoTear;
+
+    // Déchirure au doigt / à la souris : on glisse de gauche à droite
+    pk.addEventListener('pointerdown', e => {
+      if (done) return;
+      sfx.unlock();
+      drag = { x: e.clientX - p * pk.getBoundingClientRect().width * .8 };
+      pk.setPointerCapture(e.pointerId); pk.classList.add('drag');
+    });
+    pk.addEventListener('pointermove', e => {
+      const rc = pk.getBoundingClientRect();
+      const x = (e.clientX - rc.left) / rc.width, y = (e.clientY - rc.top) / rc.height;
+      pk.style.setProperty('--mx', (x * 100) + '%'); pk.style.setProperty('--my', (y * 100) + '%');
+      if (!drag) { if (!done) { pk.style.setProperty('--ry', ((x - .5) * 16) + 'deg'); pk.style.setProperty('--rx', ((.5 - y) * 12) + 'deg'); } return; }
+      const v = Math.max(0, Math.min(1, (e.clientX - drag.x) / (rc.width * .8)));
+      if (v > p) {
+        if (v - lastCrack > .07) { sfx.crackle(); vibrate(4); lastCrack = v; }
+        setP(v);
+      }
+      if (v >= 1) doTear();
+    });
+    const release = () => {
+      if (!drag) return;
+      drag = null; pk.classList.remove('drag');
+      if (p > .55) doTear(); else { setP(0); lastCrack = 0; }
+    };
+    pk.addEventListener('pointerup', release);
+    pk.addEventListener('pointercancel', release);
+    pk.addEventListener('pointerleave', () => { if (!drag) { pk.style.setProperty('--rx', '0deg'); pk.style.setProperty('--ry', '0deg'); } });
+    $('[data-pk="tear"]', st).onclick = autoTear;
+    const all = $('[data-pk="all"]', st);
+    if (all) all.onclick = () => { autoAll = true; autoTear(); };
+    if (fast()) setTimeout(autoTear, 420);
   });
 }
-$('#ovSkip').onclick = () => { skipReq = true; };
+$('#ovSkip').onclick = () => { skipReq = true; curAutoTear?.(); };
 
 async function showReveal(b, results, newState) {
   const best = results.reduce((a, r) => TIERS.indexOf(r.tier) > TIERS.indexOf(a.tier) ? r : a, results[0]);
   const lvl = TIERS.indexOf(best.tier), color = TIER_COLOR[best.tier];
-  $('#reels').style.display = 'none'; $('#ovSkip').style.display = 'none';
+  $('#ovSkip').style.display = 'none';
   const rv = $('#reveal'); rv.classList.add('on'); rv.style.setProperty('--c', color);
   const slam = $('#slam');
   const bestItem = item(best.item);
@@ -1301,7 +1359,7 @@ PAGES.upgrade = () => {
   <div class="two picker">
     <div>
       <div class="sec-h" style="margin-top:0"><h2 style="font-size:22px">Ton coffre</h2><p>${inv.length} objet${inv.length > 1 ? 's' : ''}</p></div>
-      ${inv.length ? `<div class="grid" id="pickFrom">${inv.map(o => tile(item(o.itemId), { tier: o.tier, uid: o.uid, selectable: true, sel: o.uid === u.uid })).join('')}</div>` : `<div class="empty panel"><h3>Coffre vide</h3><p>Ouvre une box pour avoir de quoi upgrader.</p><a class="btn btn-primary" href="#/">Ouvrir une box</a></div>`}
+      ${inv.length ? `<div class="grid" id="pickFrom">${inv.map(o => tile(item(o.itemId), { tier: o.tier, uid: o.uid, selectable: true, sel: o.uid === u.uid })).join('')}</div>` : `<div class="empty panel"><h3>Coffre vide</h3><p>Ouvre un booster pour avoir de quoi upgrader.</p><a class="btn btn-primary" href="#/">Ouvrir un booster</a></div>`}
     </div>
     <div>
       <div class="sec-h" style="margin-top:0"><h2 style="font-size:22px">Cible</h2><p>${from ? 'Valeur &gt; ×1,2' : 'Choisis d\'abord ton objet'}</p></div>
@@ -1375,7 +1433,7 @@ PAGES.inventory = () => {
     <button class="btn btn-primary btn-sm" id="sellSel" ${S.sel.size ? '' : 'disabled'}>Revendre · +${fmt(selVal * S.cfg.sellback)} EC</button>
   </div>
   <div class="grid">${inv.map(o => tile(item(o.itemId), { tier: o.tier, uid: o.uid, selectable: true, sel: S.sel.has(o.uid) })).join('')}</div>`
-  : `<div class="empty panel"><h3>Ton coffre est vide</h3><p>Chaque lot gagné atterrit ici.</p><a class="btn btn-primary" href="#/">Ouvrir ma première box</a></div>`}`;
+  : `<div class="empty panel"><h3>Ton coffre est vide</h3><p>Chaque lot gagné atterrit ici.</p><a class="btn btn-primary" href="#/">Ouvrir mon premier booster</a></div>`}`;
   $$('#p-inventory .tile').forEach(t => t.onclick = () => { const u = t.dataset.uid; S.sel.has(u) ? S.sel.delete(u) : S.sel.add(u); sfx.click(); PAGES.inventory(); });
   $('#selAll') && ($('#selAll').onclick = () => { S.sel = S.sel.size === inv.length ? new Set() : new Set(inv.map(o => o.uid)); PAGES.inventory(); });
   $('#sellSel') && ($('#sellSel').onclick = async () => {
@@ -1425,7 +1483,7 @@ PAGES.profile = () => {
     <div class="lvl-bar"><i style="width:${(prog * 100).toFixed(1)}%"></i></div>
   </div>
   <div class="stats">
-    <div class="stat panel"><span>Box ouvertes</span><b class="num">${s.opened}</b></div>
+    <div class="stat panel"><span>Boosters ouverts</span><b class="num">${s.opened}</b></div>
     <div class="stat panel"><span>Misé</span><b class="num">${fmt(s.wagered)}</b><small>EC</small></div>
     <div class="stat panel"><span>Valeur tirée</span><b class="num">${fmt(s.won)}</b><small>EC · ${s.wagered ? Math.round(s.won / s.wagered * 100) : 0} % de retour</small></div>
     <div class="stat panel"><span>Upgrades</span><b class="num">${s.upgradesWon || 0}/${s.upgrades || 0}</b><small>réussis</small></div>
@@ -1752,35 +1810,34 @@ function createStage() {
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   const canvas = renderer.domElement;
   const scene = new THREE.Scene();
-  const cam = new THREE.PerspectiveCamera(35, 1, .1, 100); cam.position.set(0, 1.9, 9.4); cam.lookAt(0, .35, 0);
+  const cam = new THREE.PerspectiveCamera(35, 1, .1, 100); cam.position.set(0, .9, 9.4); cam.lookAt(0, -.1, 0);
   const clock = new THREE.Clock();
   const U = () => ({ uTime: { value: 0 }, uC1: { value: new THREE.Color() }, uC2: { value: new THREE.Color() }, uGlow: { value: 0 }, uDark: { value: 1 } });
   const uni = U();
   const mat = new THREE.ShaderMaterial({ uniforms: uni, vertexShader: IRID_VERT, fragmentShader: IRID_FRAG });
 
   const root = new THREE.Group(); scene.add(root);
-  const caseG = new THREE.Group(); root.add(caseG);
-  const base = new THREE.Mesh(new RoundedBoxGeometry(2.6, 1.55, 1.8, 6, .14), mat); base.position.y = -.2; caseG.add(base);
-  // Charnière du couvercle à l'arrière
-  const hinge = new THREE.Group(); hinge.position.set(0, .58, -.92); caseG.add(hinge);
-  const lid = new THREE.Mesh(new RoundedBoxGeometry(2.72, .42, 1.92, 6, .12), mat); lid.position.set(0, .2, .92); hinge.add(lid);
-  // Bandeau lumineux entre base et couvercle
+  const packG = new THREE.Group(); root.add(packG);
+  // Corps du sachet (légèrement bombé) en matériau irisé
+  const body = new THREE.Mesh(new RoundedBoxGeometry(2.2, 3.4, .2, 4, .06), mat); body.scale.z = 1.2; packG.add(body);
+  // Soudures crantées haut et bas (texture rayée générée en canvas)
+  const crCanvas = document.createElement('canvas'); crCanvas.width = 256; crCanvas.height = 32;
+  const cg = crCanvas.getContext('2d');
+  const cgrd = cg.createLinearGradient(0, 0, 0, 32); cgrd.addColorStop(0, '#f2f3f7'); cgrd.addColorStop(1, '#7d808b');
+  cg.fillStyle = cgrd; cg.fillRect(0, 0, 256, 32);
+  for (let x = 0; x < 256; x += 6) { cg.fillStyle = 'rgba(0,0,0,.28)'; cg.fillRect(x + 3, 0, 3, 32); }
+  const crTex = new THREE.CanvasTexture(crCanvas); crTex.colorSpace = THREE.SRGBColorSpace;
+  const crMat = new THREE.MeshBasicMaterial({ map: crTex });
+  const crTop = new THREE.Mesh(new THREE.BoxGeometry(2.24, .24, .09), crMat); crTop.position.y = 1.62; packG.add(crTop);
+  const crBot = crTop.clone(); crBot.position.y = -1.62; packG.add(crBot);
+  // Ligne de découpe lumineuse (là où on déchire)
   const seamMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false });
-  const seam = new THREE.Mesh(new THREE.BoxGeometry(2.62, .035, 1.82), seamMat); seam.position.y = .57; caseG.add(seam);
-  // Emblème frontal (texture canvas)
-  const emCanvas = document.createElement('canvas'); emCanvas.width = 1024; emCanvas.height = 512;
+  const seam = new THREE.Mesh(new THREE.BoxGeometry(2.21, .025, .25), seamMat); seam.position.y = 1.2; packG.add(seam);
+  // Visuel frontal (texture canvas)
+  const emCanvas = document.createElement('canvas'); emCanvas.width = 800; emCanvas.height = 1080;
   const emTex = new THREE.CanvasTexture(emCanvas); emTex.colorSpace = THREE.SRGBColorSpace;
-  const emblem = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.1), new THREE.MeshBasicMaterial({ map: emTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
-  emblem.position.set(0, -.2, .911); caseG.add(emblem);
-  // Faisceau de lumière (cône additif)
-  const beamMat = new THREE.ShaderMaterial({
-    uniforms: { uC: { value: new THREE.Color() }, uI: { value: 0 }, uTime: { value: 0 } },
-    vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);} ',
-    fragmentShader: `uniform vec3 uC; uniform float uI; uniform float uTime; varying vec2 vUv;
-      void main(){ float a = pow(1.0-vUv.y,1.6) * (0.6+0.4*sin(vUv.x*60.0+uTime*4.0)) * uI; gl_FragColor=vec4(uC*1.5, a*0.7); }`,
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-  });
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 1.1, 6, 48, 1, true), beamMat); beam.position.y = 3.55; caseG.add(beam);
+  const emblem = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.7), new THREE.MeshBasicMaterial({ map: emTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  emblem.position.set(0, -.12, .125); packG.add(emblem);
   // Sol réfléchissant
   const floor = new THREE.Mesh(new THREE.CircleGeometry(4, 64), new THREE.ShaderMaterial({
     uniforms: { uC1: uni.uC1, uC2: uni.uC2, uGlow: uni.uGlow },
@@ -1788,15 +1845,15 @@ function createStage() {
     fragmentShader: `uniform vec3 uC1; uniform vec3 uC2; uniform float uGlow; varying vec2 vUv; void main(){ float d=distance(vUv,vec2(0.5)); float a=smoothstep(0.5,0.0,d); gl_FragColor=vec4(mix(uC1,uC2,vUv.x)*(0.25+uGlow), a*a*(0.35+uGlow*0.6)); }`,
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   }));
-  floor.rotation.x = -Math.PI / 2; floor.position.y = -1.02; root.add(floor);
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -2.1; root.add(floor);
   // Étincelles orbitales
-  const SN = 260, sp = new Float32Array(SN * 3), sv = new Float32Array(SN * 3);
-  for (let i = 0; i < SN; i++) { const a = Math.random() * Math.PI * 2, r = 2 + Math.random() * 1.6; sp.set([Math.cos(a) * r, Math.random() * 3 - 1, Math.sin(a) * r], i * 3); }
+  const SN = 260, sp = new Float32Array(SN * 3);
+  for (let i = 0; i < SN; i++) { const a = Math.random() * Math.PI * 2, r = 1.9 + Math.random() * 1.6; sp.set([Math.cos(a) * r, Math.random() * 4.4 - 2.2, Math.sin(a) * r], i * 3); }
   const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
   const sparkMat = new THREE.PointsMaterial({ size: .05, color: 0xffffff, transparent: true, opacity: .7, blending: THREE.AdditiveBlending, depthWrite: false });
   const sparks = new THREE.Points(sg, sparkMat); root.add(sparks);
 
-  let host = null, curB = null, visible = false, opening = null;
+  let host = null, visible = false;
   let drag = null, rotY = -.5, rotVel = .004, tilt = 0;
   canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, r: rotY }; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener('pointermove', e => { if (drag) { const nr = drag.r + (e.clientX - drag.x) * .01; rotVel = (nr - rotY) * .5; rotY = nr; } });
@@ -1804,31 +1861,36 @@ function createStage() {
   canvas.addEventListener('pointercancel', () => { drag = null; });
 
   function drawEmblem(b) {
-    const g = emCanvas.getContext('2d');
-    g.clearRect(0, 0, 1024, 512);
-    const grd = g.createLinearGradient(0, 0, 1024, 0); grd.addColorStop(0, b.theme[0]); grd.addColorStop(1, b.theme[1]);
-    g.strokeStyle = grd; g.lineWidth = 6; g.globalAlpha = .9;
-    g.beginPath(); g.roundRect(60, 60, 904, 392, 40); g.stroke();
-    g.globalAlpha = 1; g.fillStyle = grd; g.textAlign = 'center';
-    g.font = '700 30px Manrope, sans-serif'; g.fillText('E D E N   V A U L T', 512, 150);
-    g.font = '600 110px Fraunces, Georgia, serif'; g.fillText(b.name, 512, 290, 840);
-    g.font = '800 34px Manrope, sans-serif'; g.globalAlpha = .75; g.fillText(b.free ? 'OFFERT · 24 H' : `${fmt(b.price)} EC`, 512, 380);
+    const g = emCanvas.getContext('2d'), W = 800, H = 1080;
+    g.clearRect(0, 0, W, H);
+    const grd = g.createLinearGradient(0, 0, W, H); grd.addColorStop(0, b.theme[0]); grd.addColorStop(1, b.theme[1]);
+    g.textAlign = 'center'; g.fillStyle = grd; g.strokeStyle = grd;
+    // Médaillon central
+    g.lineWidth = 8; g.globalAlpha = .9; g.beginPath(); g.arc(W / 2, 360, 130, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = .25; g.beginPath(); g.arc(W / 2, 360, 160, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = 1; g.font = '800 150px Fraunces, Georgia, serif'; g.fillText('E', W / 2, 412);
+    g.font = '800 34px Manrope, sans-serif'; g.fillText('E D E N   V A U L T', W / 2, 590);
+    g.font = '700 108px Fraunces, Georgia, serif'; g.fillText(b.name, W / 2, 720, 700);
+    g.font = '800 30px Manrope, sans-serif'; g.globalAlpha = .8;
+    g.fillText(b.free ? 'OFFERT · 24 H' : 'BOOSTER VIRTUEL', W / 2, 810);
+    g.globalAlpha = .65; g.fillText(b.free ? 'UN CADEAU À L’INTÉRIEUR' : `${fmt(b.price)} EC · 1 BOOSTER RÉEL DEDANS`, W / 2, 860, 720);
     emTex.needsUpdate = true;
   }
-  const resize = () => { if (!host) return; const r = host.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); cam.aspect = r.width / r.height; cam.position.z = cam.aspect < 1 ? 12 : 9.4; cam.lookAt(0, .35, 0); cam.updateProjectionMatrix(); };
+  const resize = () => { if (!host) return; const r = host.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); cam.aspect = r.width / r.height; cam.position.z = cam.aspect < 1 ? 11.5 : 9.4; cam.lookAt(0, -.1, 0); cam.updateProjectionMatrix(); };
   const ro = new ResizeObserver(resize);
 
   const loop = () => {
     requestAnimationFrame(loop);
     if (!visible || document.hidden) return;
     const t = clock.getElapsedTime();
-    uni.uTime.value = t; beamMat.uniforms.uTime.value = t;
+    uni.uTime.value = t;
     if (!drag) { rotY += rotVel; rotVel += (.004 - rotVel) * .02; }
     tilt += ((-mouse.y * .12) - tilt) * .05;
     root.rotation.y = rotY; root.rotation.x = tilt;
-    caseG.position.y = Math.sin(t * 1.2) * .08;
+    packG.position.y = Math.sin(t * 1.2) * .08;
+    packG.rotation.z = Math.sin(t * .7) * .03;
+    seamMat.opacity = .6 + Math.sin(t * 3) * .3;
     sparks.rotation.y = -t * .15;
-    if (opening) opening(t);
     renderer.render(scene, cam);
   };
   loop();
@@ -1836,40 +1898,14 @@ function createStage() {
   return {
     get visible() { return visible; },
     attach(h, b) {
-      host = h; curB = b;
+      host = h;
       h.appendChild(canvas); $('#stageFallback', h)?.remove();
       uni.uC1.value.set(b.theme[0]); uni.uC2.value.set(b.theme[1]); seamMat.color.set(b.theme[0]); sparkMat.color.set(b.theme[1]);
       if (document.fonts?.ready) document.fonts.ready.then(() => drawEmblem(b)); else drawEmblem(b);
-      this.reset(); visible = true; ro.disconnect(); ro.observe(h); resize();
+      visible = true; ro.disconnect(); ro.observe(h); resize();
     },
     hide() { visible = false; },
-    reset() { opening = null; hinge.rotation.x = 0; beamMat.uniforms.uI.value = 0; uni.uGlow.value = 0; caseG.scale.setScalar(1); caseG.rotation.z = 0; seamMat.opacity = .9; },
-    // Séquence : tremblement croissant → couvercle éjecté → faisceau de lumière
-    open() {
-      return new Promise(res => {
-        const t0 = clock.getElapsedTime();
-        beamMat.uniforms.uC.value.set(curB.theme[0]);
-        sfx.rumble();
-        let burst = false;
-        opening = t => {
-          const k = t - t0;
-          if (k < .85) {
-            const a = k / .85;
-            caseG.rotation.z = Math.sin(k * 70) * .03 * a; caseG.position.x = Math.sin(k * 90) * .05 * a;
-            uni.uGlow.value = a * .5; seamMat.opacity = .9 + Math.sin(k * 40) * .1;
-            caseG.scale.setScalar(1 + a * .04);
-          } else {
-            if (!burst) { burst = true; sfx.burst(); caseG.rotation.z = 0; caseG.position.x = 0; }
-            const b = Math.min(1, (k - .85) / .5);
-            const spring = 1 - Math.exp(-6 * b) * Math.cos(10 * b);
-            hinge.rotation.x = -1.95 * spring;
-            beamMat.uniforms.uI.value = Math.min(1, b * 1.6); uni.uGlow.value = .5 + b * .5;
-            caseG.scale.setScalar(1.04 - b * .04);
-            if (k > 1.25 && res) { const r = res; res = null; r(); }
-          }
-        };
-      });
-    },
+    reset() {},
   };
 }
 
