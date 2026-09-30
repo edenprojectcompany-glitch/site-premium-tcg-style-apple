@@ -305,6 +305,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const MOBILE = matchMedia('(max-width:720px)').matches || /Mobi|Android/i.test(navigator.userAgent);
+// Firefox gère mal les render targets multi-échantillonnés (MSAA) du post-traitement et du miroir
+const FIREFOX = /firefox/i.test(navigator.userAgent);
+const MSAA = MOBILE || FIREFOX ? 0 : 4;
 const TIERS = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 const TIER_FR = { common: 'COMMUN', uncommon: 'PEU COMMUN', rare: 'RARE', epic: 'ÉPIQUE', legendary: 'LÉGENDAIRE' };
 const TIER_COLOR = { common: '#b8bcc8', uncommon: '#7fd9ff', rare: '#c9a8ff', epic: '#ffb3e6', legendary: '#ffd97f' };
@@ -389,7 +392,7 @@ const lazyLoader = new THREE.TextureLoader(); lazyLoader.setCrossOrigin('anonymo
 // Post-traitement : bloom sur les lumières et reflets
 let composer = null, bloom = { strength: 0, setSize() {} };
 if (!LITE) {
-  const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: MOBILE ? 0 : 4 });
+  const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: MSAA });
   composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, camera));
   bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), .6, .5, .88);
@@ -413,7 +416,7 @@ pano.wrapS = THREE.RepeatWrapping; pano.repeat.x = -1; pano.offset.x = 1;
 // ── Sol : miroir + vernis sombre + incrustations dorées ──────────
 const RING_R = 4.6;
 if (!MOBILE && !LITE) {
-  const mirror = new Reflector(new THREE.CircleGeometry(40, 64), { clipBias: .003, textureWidth: innerWidth * .6, textureHeight: innerHeight * .6, color: 0x55555f });
+  const mirror = new Reflector(new THREE.CircleGeometry(40, 64), { clipBias: .003, textureWidth: innerWidth * .6, textureHeight: innerHeight * .6, color: 0x55555f, multisample: MSAA });
   mirror.rotation.x = -Math.PI / 2; mirror.position.y = -.001;
   scene.add(mirror);
 }
