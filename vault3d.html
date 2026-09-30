@@ -225,7 +225,7 @@ a{color:inherit;text-decoration:none}
       <div class="seg" id="seg"></div>
       <button class="btn btn-gold" id="openBtn">Ouvrir</button>
     </div>
-    <div class="p-foot"><span>Glisse ou utilise ← → pour changer de booster</span><a href="/vault" class="hide-m">Upgrade · Classement · Profil ↗</a></div>
+    <div class="p-foot"><span>Attrape le booster pour le faire tourner · glisse à côté pour changer</span><a href="/vault" class="hide-m">Upgrade · Classement · Profil ↗</a></div>
   </div>
 
   <div class="counter off" id="counter"></div>
@@ -402,7 +402,11 @@ if (!LITE) {
 const BLOOM_BASE = .6;
 
 // ── Décor : panorama Canva étendu par Adobe, sur un cylindre ─────
-const pano = loader.load(MOBILE ? '/img/vault3d/pano-sm.jpg' : '/img/vault3d/pano.jpg');
+const pano = loader.load(MOBILE ? '/img/vault3d/pano-sm.jpg' : '/img/vault3d/pano.jpg', t => {
+  // Le panorama de la salle devient la carte de reflets : le métal des sachets reflète la vraie chambre forte
+  const eq = t.clone(); eq.mapping = THREE.EquirectangularReflectionMapping; eq.repeat.set(1, 1); eq.offset.set(0, 0); eq.wrapS = THREE.ClampToEdgeWrapping; eq.needsUpdate = true;
+  scene.environment = pmrem.fromEquirectangular(eq).texture;
+});
 pano.colorSpace = THREE.SRGBColorSpace;
 pano.wrapS = THREE.RepeatWrapping; pano.repeat.x = -1; pano.offset.x = 1;
 {
@@ -443,6 +447,9 @@ const rimL = new THREE.PointLight(0x7fd9ff, 18, 14, 2); rimL.position.set(-4, 3.
 const rimR = new THREE.PointLight(0xffb3e6, 18, 14, 2); rimR.position.set(4, 3.5, RING_R + 1); scene.add(rimR);
 const spot = new THREE.SpotLight(0xfff4de, 60, 14, .42, .5, 1.6); spot.position.set(0, 8, RING_R + 1.5); scene.add(spot); scene.add(spot.target);
 const burstLight = new THREE.PointLight(0xffffff, 0, 10, 2); scene.add(burstLight);
+// Lumière « lampe torche » qui suit le curseur pour faire jouer reflets et ombres sur le métal
+const cursorLight = new THREE.PointLight(0xfff0dc, 7, 9, 1.2); scene.add(cursorLight);
+const insp = { yaw: 0, pitch: 0, vy: 0, active: false, hold: 0 };
 
 // ── Poussière en suspension ─────────────────────────────────────
 const dust = (() => {
@@ -498,54 +505,186 @@ const crimpTex = (() => {
 })();
 const crimpMat = new THREE.MeshStandardMaterial({ map: crimpTex, metalness: .9, roughness: .3 });
 
-// Visuel du sachet : foil Canva + couleurs de la box + textes
-function packTexture(box) {
-  const W = 512, H = 820, c = document.createElement('canvas'); c.width = W; c.height = H;
-  const g = c.getContext('2d');
-  if (foilImg.naturalWidth) { g.drawImage(foilImg, 0, 0, 768, 768, -60, 0, H, H); g.drawImage(foilImg, 0, 0, 768, 768, -60 + H * .9, 0, H, H); }
-  else { g.fillStyle = '#6a5a9a'; g.fillRect(0, 0, W, H); }
-  // Teinte aux couleurs de la box
-  g.globalCompositeOperation = 'color';
-  const tg = g.createLinearGradient(0, 0, W, H); tg.addColorStop(0, box.theme[0]); tg.addColorStop(1, box.theme[1]);
-  g.globalAlpha = .55; g.fillStyle = tg; g.fillRect(0, 0, W, H); g.globalAlpha = 1;
-  g.globalCompositeOperation = 'multiply';
-  const vg = g.createLinearGradient(0, 0, 0, H); vg.addColorStop(0, '#9a9a9a'); vg.addColorStop(.45, '#5a5a62'); vg.addColorStop(1, '#2a2a30');
-  g.fillStyle = vg; g.fillRect(0, 0, W, H);
-  g.globalCompositeOperation = 'source-over';
-  // Bande à déchirer
-  const seamPx = H * (1 - (SEAM + PH / 2) / PH);
-  g.setLineDash([10, 8]); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, seamPx); g.lineTo(W, seamPx); g.stroke(); g.setLineDash([]);
-  g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '800 20px Manrope, sans-serif'; g.textAlign = 'center';
-  g.fillText('✂  D É C H I R E R   I C I', W / 2, seamPx - 22);
-  // Médaillon
-  const cy = H * .42;
-  const mg = g.createLinearGradient(W / 2 - 80, cy - 80, W / 2 + 80, cy + 80); mg.addColorStop(0, '#fff1c9'); mg.addColorStop(.5, '#d9b26a'); mg.addColorStop(1, '#8a6418');
-  g.lineWidth = 7; g.strokeStyle = mg; g.beginPath(); g.arc(W / 2, cy, 78, 0, Math.PI * 2); g.stroke();
-  g.lineWidth = 2; g.globalAlpha = .6; g.beginPath(); g.arc(W / 2, cy, 94, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
-  g.fillStyle = mg; g.font = '800 104px Fraunces, Georgia, serif'; g.textBaseline = 'middle'; g.fillText('E', W / 2, cy + 6);
-  g.textBaseline = 'alphabetic';
-  g.fillStyle = 'rgba(255,255,255,.8)'; g.font = '800 20px Manrope, sans-serif'; g.fillText('E D E N   V A U L T', W / 2, cy + 140);
-  g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 18;
-  let fs = 74; g.font = `700 ${fs}px Fraunces, Georgia, serif`;
-  while (g.measureText(box.name).width > W - 60 && fs > 30) { fs -= 4; g.font = `700 ${fs}px Fraunces, Georgia, serif`; }
-  g.fillText(box.name, W / 2, cy + 225); g.shadowBlur = 0;
-  // Pastille
-  const label = box.free ? 'UN CADEAU À L’INTÉRIEUR' : '1 BOOSTER RÉEL À L’INTÉRIEUR';
-  g.font = '800 18px Manrope, sans-serif'; const lw = g.measureText(label).width + 44;
-  g.fillStyle = 'rgba(0,0,0,.35)'; g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 2;
-  g.beginPath(); g.roundRect(W / 2 - lw / 2, cy + 262, lw, 42, 21); g.fill(); g.stroke();
-  g.fillStyle = '#fff'; g.fillText(label, W / 2, cy + 290);
-  g.fillStyle = 'rgba(255,241,201,.9)'; g.font = '800 24px Manrope, sans-serif';
-  g.fillText(box.free ? 'OFFERT · 24 H' : `${fmt(box.price)} EC`, W / 2, H - 70);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
-  return t;
+// ════════════════════════════════════════════════════════════
+// DESIGNS DES SACHETS — chaque box a son métal, ses gravures et ses reliefs.
+// On dessine 3 calques avec les mêmes formes :
+//   albedo (couleurs), orm (G = rugosité, B = métal) et bump (relief : gravé = sombre, embossé = clair)
+// ════════════════════════════════════════════════════════════
+const DESIGNS = {
+  china:  { base: ['#4a0909', '#a8201a', '#e2553c'], accent: 'gold',     pattern: 'scales',    ink: '#210303', tag: 'SÉRIE CHINE' },
+  japan:  { base: ['#07123a', '#1b3f9c', '#6b98ff'], accent: 'silver',   pattern: 'sunrise',   ink: '#030819', tag: 'SÉRIE JAPON' },
+  mega:   { base: ['#170830', '#4f2396', '#b98aff'], accent: 'rose',     pattern: 'hex',       ink: '#0b031c', tag: 'SÉRIE MÉGA' },
+  rocket: { base: ['#050507', '#1d1d24', '#4d4d59'], accent: 'crimson',  pattern: 'chevron',   ink: '#000000', tag: 'SÉRIE NOIRE' },
+  grail:  { base: ['#5e3e0e', '#c4923d', '#f7e0a2'], accent: 'platinum', pattern: 'guilloche', ink: '#2a1904', tag: 'ÉDITION GRAAL' },
+  daily:  { base: ['#042924', '#0f7d69', '#5fe3c3'], accent: 'silver',   pattern: 'stars',     ink: '#01130f', tag: 'CADEAU DU JOUR' },
+};
+const ACCENTS = {
+  gold: ['#fff5d2', '#e3b75e', '#7e5412'], silver: ['#ffffff', '#cfd6e2', '#5f6776'], rose: ['#ffeaf3', '#eaa5bd', '#7c3f55'],
+  crimson: ['#ffc2c6', '#e3263a', '#5c0710'], platinum: ['#ffffff', '#e6e8ee', '#858b99'],
+};
+// Aléatoire déterministe (même design à chaque chargement)
+function rng(seedStr) { let h = 1779033703 ^ seedStr.length; for (const ch of seedStr) h = Math.imul(h ^ ch.charCodeAt(0), 3432918353), h = h << 13 | h >>> 19; return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; }; }
+
+function drawPack(g, W, H, box, d, pass) {
+  const S = W / 800, acc = ACCENTS[d.accent];
+  const cx = W / 2, cy = H * .40;
+  const seamY = H * (1 - (SEAM + PH / 2) / PH), topY = H * (CRIMP / PH), botY = H - topY;
+  const rnd = rng(box.id + pass.length * 0);
+  // Style d'un « matériau » selon le calque
+  const M = kind => {
+    if (pass === 'albedo') {
+      if (kind === 'base') { const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, d.base[2]); gr.addColorStop(.45, d.base[1]); gr.addColorStop(1, d.base[0]); return gr; }
+      if (kind === 'engrave') return 'rgba(0,0,0,.42)';
+      if (kind === 'fine') return 'rgba(255,255,255,.16)';
+      if (kind === 'emboss') { const gr = g.createLinearGradient(0, 0, W * .7, H); gr.addColorStop(0, acc[0]); gr.addColorStop(.5, acc[1]); gr.addColorStop(1, acc[2]); return gr; }
+      if (kind === 'print') return d.ink;
+      if (kind === 'hi') return acc[0];
+      if (kind === 'foil') { if (!foilImg.naturalWidth) return acc[1]; const pt = g.createPattern(foilImg, 'repeat'); pt.setTransform(new DOMMatrix().scale(S * .55)); return pt; }
+    }
+    if (pass === 'orm') return { base: 'rgb(0,70,255)', engrave: 'rgb(0,150,225)', fine: 'rgb(0,95,255)', emboss: 'rgb(0,28,255)', print: 'rgb(0,175,25)', hi: 'rgb(0,30,255)', foil: 'rgb(0,38,255)' }[kind];
+    return { base: '#808080', engrave: '#383838', fine: '#6e6e6e', emboss: '#ececec', print: '#868686', hi: '#e2e2e2', foil: '#9a9a9a' }[kind];
+  };
+  const fill = (k, fn) => { g.fillStyle = M(k); g.beginPath(); fn(); g.fill(); };
+  const stroke = (k, w, fn) => { g.strokeStyle = M(k); g.lineWidth = w * S; g.beginPath(); fn(); g.stroke(); };
+  const text = (k, str, x, y, font, align = 'center', maxW) => { g.fillStyle = M(k); g.font = font; g.textAlign = align; g.textBaseline = 'middle'; g.fillText(str, x, y, maxW); };
+
+  // 1. Métal de base + brossage vertical
+  g.fillStyle = M('base'); g.fillRect(0, 0, W, H);
+  for (let i = 0; i < W * 1.2; i++) {
+    const x = rnd() * W, a = .03 + rnd() * .06;
+    g.fillStyle = pass === 'albedo' ? `rgba(255,255,255,${a})` : pass === 'orm' ? `rgba(0,${120 + rnd() * 60 | 0},255,${a * 3})` : `rgba(160,160,160,${a})`;
+    g.fillRect(x, 0, 1, H);
+  }
+
+  // 2. Motif gravé propre à la série (zone du corps)
+  g.save(); g.beginPath(); g.rect(0, seamY, W, botY - seamY); g.clip();
+  if (d.pattern === 'scales') {
+    // Écailles de dragon
+    const r = 34 * S;
+    for (let row = 0, y = seamY - r; y < botY + r; row++, y += r * .9)
+      for (let x = (row % 2) * r - r; x < W + r; x += r * 2) {
+        stroke('engrave', 2.2, () => g.arc(x, y, r, 0, Math.PI));
+        stroke('fine', 1, () => g.arc(x, y, r * .62, .2, Math.PI - .2));
+      }
+  } else if (d.pattern === 'sunrise') {
+    // Soleil levant : rayons + cercles concentriques + fleurs de cerisier
+    for (let i = 0; i < 96; i++) { const a = i / 96 * Math.PI * 2; stroke(i % 2 ? 'fine' : 'engrave', i % 2 ? 1 : 1.6, () => { g.moveTo(cx + Math.cos(a) * 120 * S, cy + Math.sin(a) * 120 * S); g.lineTo(cx + Math.cos(a) * 1400 * S, cy + Math.sin(a) * 1400 * S); }); }
+    for (let r = 150; r < 900; r += 38) stroke('engrave', 1, () => g.arc(cx, cy, r * S, 0, Math.PI * 2));
+    for (let k = 0; k < 16; k++) {
+      const x = rnd() * W, y = seamY + rnd() * (botY - seamY), rr = (10 + rnd() * 16) * S;
+      if (Math.hypot(x - cx, y - cy) < 260 * S) continue;
+      for (let pI = 0; pI < 5; pI++) { const a = pI / 5 * Math.PI * 2 + rnd(); fill('emboss', () => g.ellipse(x + Math.cos(a) * rr * .6, y + Math.sin(a) * rr * .6, rr * .55, rr * .32, a, 0, Math.PI * 2)); }
+      fill('print', () => g.arc(x, y, rr * .18, 0, Math.PI * 2));
+    }
+  } else if (d.pattern === 'hex') {
+    // Alvéoles de cristal : grille hexagonale, certaines cellules en foil
+    const r = 30 * S, h = Math.sqrt(3) * r;
+    for (let col = 0, x = 0; x < W + r * 2; col++, x += r * 1.5)
+      for (let y = (col % 2) * h / 2; y < H + h; y += h) {
+        const hex = () => { for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; k ? g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r) : g.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.closePath(); };
+        if (rnd() < .13) fill('foil', hex);
+        stroke('engrave', 2, hex);
+        stroke('fine', 1, () => { for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; k ? g.lineTo(x + Math.cos(a) * r * .7, y + Math.sin(a) * r * .7) : g.moveTo(x + Math.cos(a) * r * .7, y + Math.sin(a) * r * .7); } g.closePath(); });
+      }
+  } else if (d.pattern === 'chevron') {
+    // Chevrons carbone + fines bandes rouges
+    const st = 26 * S;
+    for (let y = seamY - W; y < botY + W; y += st) stroke('engrave', 2.4, () => { g.moveTo(0, y); g.lineTo(W / 2, y + W * .28); g.lineTo(W, y); });
+    for (let y = seamY; y < botY; y += 7 * S) for (let x = (y / (7 * S) % 2) * 7 * S; x < W; x += 14 * S) fill('fine', () => g.rect(x, y, 7 * S, 3.5 * S));
+    for (const off of [-.16, .16]) stroke('emboss', 5, () => { g.moveTo(0, cy + off * H + W * .05); g.lineTo(W / 2, cy + off * H + W * .33); g.lineTo(W, cy + off * H + W * .05); });
+  } else if (d.pattern === 'guilloche') {
+    // Guillochage façon billet de banque : rosaces + ondes
+    for (let ring = 0; ring < 14; ring++) {
+      const R = (150 + ring * 22) * S, amp = (8 + ring % 3 * 4) * S, n = 18 + ring % 4 * 6, ph = ring * .4;
+      stroke(ring % 2 ? 'fine' : 'engrave', 1.2, () => { for (let k = 0; k <= 720; k++) { const a = k / 720 * Math.PI * 2, rr = R + amp * Math.sin(n * a + ph); k ? g.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr) : g.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } });
+    }
+    for (let y = cy + 380 * S; y < botY; y += 10 * S) stroke('engrave', 1, () => { for (let x = 0; x <= W; x += 6) { const yy = y + Math.sin(x / (40 * S) + y) * 5 * S; x ? g.lineTo(x, yy) : g.moveTo(x, yy); } });
+  } else {
+    // Constellations
+    const pts = [];
+    for (let k = 0; k < 70; k++) pts.push([rnd() * W, seamY + rnd() * (botY - seamY), rnd()]);
+    for (let k = 0; k < pts.length - 1; k += 1) if (rnd() < .45) { const [a, b] = [pts[k], pts[k + 1]]; stroke('engrave', 1.2, () => { g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }); }
+    for (const [x, y, z] of pts) { const r = (3 + z * 9) * S; fill(z > .7 ? 'emboss' : 'hi', () => { g.moveTo(x, y - r * 2); g.lineTo(x + r * .45, y - r * .45); g.lineTo(x + r * 2, y); g.lineTo(x + r * .45, y + r * .45); g.lineTo(x, y + r * 2); g.lineTo(x - r * .45, y + r * .45); g.lineTo(x - r * 2, y); g.lineTo(x - r * .45, y - r * .45); g.closePath(); }); }
+  }
+  g.restore();
+
+  // 3. Assombrissement des bords (volume du sachet)
+  if (pass === 'albedo') { const vg = g.createRadialGradient(cx, H * .45, W * .2, cx, H * .5, W * .95); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.45)'); g.fillStyle = vg; g.fillRect(0, 0, W, H); }
+
+  // 4. Cadre double + ornements d'angle
+  const inset = 30 * S, fy0 = seamY + 26 * S, fy1 = botY - 26 * S;
+  stroke('emboss', 5, () => g.roundRect(inset, fy0, W - inset * 2, fy1 - fy0, 18 * S));
+  stroke('emboss', 1.5, () => g.roundRect(inset + 12 * S, fy0 + 12 * S, W - inset * 2 - 24 * S, fy1 - fy0 - 24 * S, 12 * S));
+  for (const [x, y] of [[inset, fy0], [W - inset, fy0], [inset, fy1], [W - inset, fy1]]) fill('emboss', () => { const r = 16 * S; g.moveTo(x, y - r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x - r, y); g.closePath(); });
+
+  // 5. Bande à déchirer
+  stroke('engrave', 2, () => { g.setLineDash([12 * S, 9 * S]); g.moveTo(0, seamY); g.lineTo(W, seamY); });
+  g.setLineDash([]);
+  text('emboss', '✂  DÉCHIRER ICI  ✂', cx, (topY + seamY) / 2 + 6 * S, `800 ${22 * S}px Manrope, sans-serif`);
+  text('fine', 'EDEN VAULT · BOOSTER VIRTUEL · SCELLÉ', cx, (topY + seamY) / 2 + 34 * S, `700 ${12 * S}px Manrope, sans-serif`);
+
+  // 6. Médaillon : couronne, perles, texte circulaire, disque holo, monogramme
+  const R = 118 * S;
+  fill('print', () => g.arc(cx, cy, R + 34 * S, 0, Math.PI * 2));
+  stroke('emboss', 10, () => g.arc(cx, cy, R + 26 * S, 0, Math.PI * 2));
+  stroke('emboss', 2, () => g.arc(cx, cy, R + 40 * S, 0, Math.PI * 2));
+  for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; fill('emboss', () => g.arc(cx + Math.cos(a) * (R + 26 * S), cy + Math.sin(a) * (R + 26 * S), 3.2 * S, 0, Math.PI * 2)); }
+  fill('foil', () => g.arc(cx, cy, R, 0, Math.PI * 2));
+  stroke('emboss', 4, () => g.arc(cx, cy, R, 0, Math.PI * 2));
+  g.save(); g.fillStyle = M('hi'); g.font = `800 ${15 * S}px Manrope, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const ring = `EDEN VAULT ✦ ${d.tag} ✦ CHAMBRE FORTE ✦ `;
+  for (let k = 0; k < ring.length; k++) { const a = -Math.PI / 2 + (k / ring.length) * Math.PI * 2; g.save(); g.translate(cx + Math.cos(a) * (R + 13 * S), cy + Math.sin(a) * (R + 13 * S)); g.rotate(a + Math.PI / 2); g.fillText(ring[k], 0, 0); g.restore(); }
+  g.restore();
+  text('print', 'E', cx + 4 * S, cy + 10 * S, `800 ${190 * S}px Fraunces, Georgia, serif`);
+  text('emboss', 'E', cx, cy + 4 * S, `800 ${190 * S}px Fraunces, Georgia, serif`);
+
+  // 7. Plaque de titre
+  const py = cy + R + 70 * S, ph = 150 * S, pw = W - 150 * S;
+  fill('print', () => g.roundRect(cx - pw / 2, py, pw, ph, 14 * S));
+  stroke('emboss', 3, () => g.roundRect(cx - pw / 2, py, pw, ph, 14 * S));
+  stroke('emboss', 1, () => g.roundRect(cx - pw / 2 + 8 * S, py + 8 * S, pw - 16 * S, ph - 16 * S, 9 * S));
+  let fs = 74 * S; g.font = `700 ${fs}px Fraunces, Georgia, serif`;
+  while (g.measureText(box.name).width > pw - 50 * S && fs > 30 * S) { fs -= 3 * S; g.font = `700 ${fs}px Fraunces, Georgia, serif`; }
+  text('emboss', box.name, cx, py + ph * .44, g.font);
+  text('fine', d.tag + ' · ' + (box.free ? 'OFFERT' : `${fmt(box.price)} EC`), cx, py + ph * .8, `800 ${15 * S}px Manrope, sans-serif`);
+
+  // 8. Pastille « booster réel »
+  const lab = box.free ? 'UN CADEAU À L’INTÉRIEUR' : '1 BOOSTER RÉEL À L’INTÉRIEUR';
+  g.font = `800 ${17 * S}px Manrope, sans-serif`; const lw = g.measureText(lab).width + 46 * S, ly = py + ph + 30 * S;
+  fill('print', () => g.roundRect(cx - lw / 2, ly, lw, 40 * S, 20 * S));
+  stroke('emboss', 2, () => g.roundRect(cx - lw / 2, ly, lw, 40 * S, 20 * S));
+  text('hi', lab, cx, ly + 21 * S, g.font);
+
+  // 9. Pied : code-barres, numéro de série, prix, micro-texte
+  const fy = botY - 92 * S;
+  let bx = inset + 30 * S; for (let k = 0; k < 34; k++) { const w = (1 + (rnd() * 3 | 0)) * S; fill('print', () => g.rect(bx, fy, w, 38 * S)); bx += w + (1 + rnd() * 2) * S; }
+  text('fine', 'EV-' + box.id.toUpperCase() + '-' + String(1000 + (rnd() * 8999 | 0)), inset + 30 * S, fy + 52 * S, `700 ${11 * S}px ui-monospace, monospace`, 'left');
+  text('emboss', box.free ? 'OFFERT' : `${fmt(box.price)} EC`, W - inset - 30 * S, fy + 20 * S, `800 ${30 * S}px Manrope, sans-serif`, 'right');
+  text('fine', 'AUTHENTIQUE · PROVABLY FAIR · EDEN PROJECT TCG', cx, botY - 16 * S, `700 ${10 * S}px Manrope, sans-serif`);
 }
-function packMaterial(tex) {
-  return new THREE.MeshPhysicalMaterial({ map: tex, metalness: .55, roughness: .26, clearcoat: 1, clearcoatRoughness: .12, iridescence: .85, iridescenceIOR: 1.35, iridescenceThicknessRange: [120, 700], envMapIntensity: 1.5 });
+
+function packMaps(box) {
+  const d = DESIGNS[box.id] || DESIGNS.japan;
+  const W = MOBILE ? 512 : 800, H = Math.round(W * PH / PW), out = {};
+  for (const pass of ['albedo', 'orm', 'bump']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    drawPack(c.getContext('2d'), W, H, box, d, pass);
+    const t = new THREE.CanvasTexture(c); t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    if (pass === 'albedo') t.colorSpace = THREE.SRGBColorSpace;
+    out[pass] = t;
+  }
+  return out;
+}
+function packMaterial(m) {
+  return new THREE.MeshPhysicalMaterial({
+    map: m.albedo, roughnessMap: m.orm, metalnessMap: m.orm, bumpMap: m.bump, bumpScale: 2.2,
+    metalness: 1, roughness: 1, clearcoat: .45, clearcoatRoughness: .22,
+    iridescence: .28, iridescenceIOR: 1.3, iridescenceThicknessRange: [100, 480], envMapIntensity: 2.6,
+  });
 }
 // Un sachet complet : corps + bande (pivot à gauche) + soudures
-function buildPack(box, tex) {
-  const mat = packMaterial(tex);
+function buildPack(box, maps) {
+  const mat = packMaterial(maps);
   const g = new THREE.Group();
   const body = new THREE.Mesh(G_BODY, mat); g.add(body);
   const crB = new THREE.Mesh(G_CRIMP, crimpMat); crB.position.y = -PH / 2 + CRIMP / 2; g.add(crB);
@@ -573,23 +712,12 @@ function buildStand(box, i, n) {
   const gold = new THREE.MeshStandardMaterial({ color: 0xd9b26a, metalness: 1, roughness: .22, emissive: 0x2a1c04 });
   const lip = new THREE.Mesh(new THREE.TorusGeometry(.79, .03, 16, 96), gold); lip.rotation.x = Math.PI / 2; lip.position.y = 1.05; grp.add(lip);
   const lip2 = new THREE.Mesh(new THREE.TorusGeometry(.9, .02, 16, 96), gold); lip2.rotation.x = Math.PI / 2; lip2.position.y = .02; grp.add(lip2);
-  const glow = new THREE.Mesh(new THREE.CircleGeometry(.76, 64), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .35, blending: THREE.AdditiveBlending, depthWrite: false }));
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(.76, 64), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .12, blending: THREE.AdditiveBlending, depthWrite: false }));
   glow.rotation.x = -Math.PI / 2; glow.position.y = 1.056; grp.add(glow);
-  // Colonne de lumière fine au-dessus du socle
-  const beamGeo = new THREE.CylinderGeometry(.62, .74, 3.2, 48, 1, true); beamGeo.translate(0, 1.6, 0);
-  const beamMat = new THREE.ShaderMaterial({
-    uniforms: { c: { value: col }, o: { value: .25 } },
-    vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
-    fragmentShader: 'uniform vec3 c; uniform float o; varying vec2 vUv; void main(){ gl_FragColor=vec4(c, pow(1.-vUv.y,2.2)*o); }',
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-  });
-  const beam = new THREE.Mesh(beamGeo, beamMat); beam.position.y = 1.05; grp.add(beam);
-  const halo = new THREE.Mesh(new THREE.RingGeometry(.95, .975, 96), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-  halo.position.y = 2.2; grp.add(halo);
-  const tex = packTexture(box);
-  const pack = buildPack(box, tex); pack.position.y = 2.2; grp.add(pack);
+  const maps = packMaps(box);
+  const pack = buildPack(box, maps); pack.position.y = 2.2; grp.add(pack);
   ring.add(grp);
-  return { box, grp, pack, tex, glow, beamMat, halo, angle: a, base };
+  return { box, grp, pack, maps, glow, angle: a, base };
 }
 
 // ════════════════════════════════════════════════════════════
@@ -617,7 +745,7 @@ function selectIndex(i, silent) {
   let target = -stands[i].angle;
   while (target - ringTarget > Math.PI) target -= Math.PI * 2;
   while (target - ringTarget < -Math.PI) target += Math.PI * 2;
-  ringTarget = target; S.sel = i;
+  ringTarget = target; S.sel = i; insp.yaw = 0; insp.pitch = 0; insp.vy = 0;
   if (!silent) sfx.swish();
   renderPanel();
 }
@@ -711,7 +839,7 @@ async function openFlow() {
 async function openOne(st, r, prize, i, n) {
   const it = item(r.item), color = new THREE.Color(TIER_COLOR[r.tier]), lvl = TIERS.indexOf(r.tier);
   // Nouveau sachet qui part du socle vers la scène
-  const pack = buildPack(st.box, st.tex);
+  const pack = buildPack(st.box, st.maps);
   const from = new THREE.Vector3(); st.pack.getWorldPosition(from);
   pack.position.copy(from); scene.add(pack);
   st.pack.visible = false;
@@ -846,8 +974,14 @@ function closeSummary() {
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 let down = null;
 canvas.addEventListener('pointerdown', e => {
-  down = { x: e.clientX, y: e.clientY, t: performance.now(), ang: ringTarget, moved: false };
+  down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), ang: ringTarget, moved: false };
   canvas.setPointerCapture(e.pointerId); canvas.classList.add('grabbing');
+  // Clic sur le booster sélectionné → on l'attrape pour le faire tourner
+  if (S.mode === 'browse' && stands[S.sel]) {
+    ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    if (ray.intersectObject(stands[S.sel].pack, true).length) { down.inspect = true; insp.active = true; insp.vy = 0; }
+  }
   if (S.mode === 'tear' && tearCtl) down.p0 = tearCtl.p;
 });
 canvas.addEventListener('pointermove', e => {
@@ -855,12 +989,19 @@ canvas.addEventListener('pointermove', e => {
   if (!down) return;
   const dx = e.clientX - down.x;
   if (Math.abs(dx) > 6) down.moved = true;
+  if (down.inspect) {
+    insp.vy = (e.clientX - down.lx) * .012; insp.yaw += insp.vy;
+    insp.pitch = clamp(insp.pitch + (e.clientY - down.ly) * .008, -.75, .75);
+    down.lx = e.clientX; down.ly = e.clientY;
+    return;
+  }
   if (S.mode === 'browse') { ringTarget = down.ang + dx * .006; }
   else if (S.mode === 'tear' && tearCtl && dx > 0) { tearCtl.setP(Math.max(tearCtl.p, (down.p0 ?? 0) + dx / (innerWidth * (MOBILE ? .6 : .32)))); }
 });
 const up = e => {
   if (!down) return;
   canvas.classList.remove('grabbing');
+  if (down.inspect) { insp.active = false; down = null; return; }
   if (S.mode === 'browse') {
     if (down.moved) {
       // Aimantation sur le socle le plus proche
@@ -871,7 +1012,7 @@ const up = e => {
       ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
       ray.setFromCamera(ndc, camera);
       const hit = ray.intersectObjects(stands.map(s => s.grp), true)[0];
-      if (hit) { const k = stands.findIndex(s => hit.object.parent === s.grp || s.grp.getObjectById(hit.object.id)); if (k >= 0) { if (k === S.sel) openFlow(); else selectIndex(k); } }
+      if (hit) { const k = stands.findIndex(s => hit.object.parent === s.grp || s.grp.getObjectById(hit.object.id)); if (k >= 0 && k !== S.sel) selectIndex(k); }
     }
   } else if (S.mode === 'tear' && tearCtl) tearCtl.release();
   down = null;
@@ -995,10 +1136,10 @@ function frame(now) {
   stands.forEach((s, i) => {
     const sel = i === S.sel;
     s.pack.position.y = 2.2 + Math.sin(t * 1.3 + i) * .06;
-    s.pack.rotation.y = Math.sin(t * .6 + i) * .35;
-    s.halo.rotation.x = Math.PI / 2 + Math.sin(t * .8 + i) * .2; s.halo.rotation.z = t * .4;
-    s.glow.material.opacity = lerp(s.glow.material.opacity, sel ? .75 : .22, .08);
-    s.beamMat.uniforms.o.value = lerp(s.beamMat.uniforms.o.value, sel ? .45 : .12, .08);
+    const idle = Math.sin(t * .6 + i) * .35;
+    if (sel) { s.pack.rotation.y = idle * (1 - insp.hold) + insp.yaw; s.pack.rotation.x = insp.pitch; }
+    else { s.pack.rotation.y = idle; s.pack.rotation.x = 0; }
+    s.glow.material.opacity = lerp(s.glow.material.opacity, sel ? .2 : .05, .08);
   });
   // Caméra : suit sa cible + léger parallaxe souris + tremblement
   cam.pos.lerp(cam.tPos, 1 - Math.pow(.02, dt)); cam.look.lerp(cam.tLook, 1 - Math.pow(.02, dt));
@@ -1006,6 +1147,12 @@ function frame(now) {
   if (cam.shake > .001) { camera.position.x += (Math.random() - .5) * cam.shake; camera.position.y += (Math.random() - .5) * cam.shake; cam.shake *= .9; }
   camera.lookAt(cam.look);
   spot.target.position.set(0, 2, RING_R);
+  // Manipulation du booster : inertie puis retour doux
+  if (!insp.active) { insp.yaw += insp.vy; insp.vy *= .93; if (Math.abs(insp.vy) < .002) insp.yaw *= .97; insp.pitch *= .94; }
+  insp.hold = lerp(insp.hold, insp.active || Math.abs(insp.yaw) > .05 ? 1 : 0, .1);
+  const lp = S.mode === 'browse' ? new THREE.Vector3(0, 2.2, RING_R) : STAGE;
+  cursorLight.position.set(lp.x + mouse.x * 2.4, lp.y - mouse.y * 1.8 + .25, lp.z + 2.6);
+  cursorLight.intensity = lerp(cursorLight.intensity, S.mode === 'browse' ? 7 : 1.5, .1);
   rays.lookAt(camera.position); rays.rotateZ(t * .25);
   scene.children.forEach(o => { if (o.userData?.spin) o.rotation.y = Math.sin(t * 1.4) * .35; });
   dust.uniforms.t.value = t;
@@ -1030,7 +1177,7 @@ addEventListener('resize', resize);
 // DÉMARRAGE
 // ════════════════════════════════════════════════════════════
 (async function boot() {
-  window.__v3d = true;
+  window.__v3d = true; window.__stands = stands;
   $('#liteBtn').textContent = LITE ? 'Mode HD' : 'Mode léger';
   $('#liteBtn').onclick = () => { location.search = LITE ? '?lite=0' : '?lite=1'; };
   resize();
