@@ -11,6 +11,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "vault3d.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "img/**",
       "use": "@vercel/static"
     },
@@ -27,6 +31,10 @@
     {
       "src": "/vault/?",
       "dest": "/vault.html"
+    },
+    {
+      "src": "/vault3d/?",
+      "dest": "/vault3d.html"
     },
     {
       "handle": "filesystem"

@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eden Vault 3D — La chambre forte</title>
+<meta name="description" content="Entre dans la chambre forte Eden Vault : boosters virtuels Pokémon JP & CN à déchirer en 3D, avec un vrai booster à l'intérieur.">
+<meta name="theme-color" content="#050507">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;0,9..144,800;1,9..144,600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<style>
+:root{
+  --ob:#050507;--txt:#f6f3ec;--mute:rgba(246,243,236,.6);--dim:rgba(246,243,236,.38);
+  --gold:#d9b26a;--gold2:#f3d9a0;--glass:rgba(12,12,16,.55);--gb:rgba(255,255,255,.1);--gb2:rgba(217,178,106,.35);
+  --f1:#7fd9ff;--f2:#c9a8ff;--f3:#ffb3e6;--f4:#a8ffd4;
+  --spring:cubic-bezier(.16,1,.3,1);--serif:'Fraunces',Georgia,serif;--sans:'Manrope',system-ui,sans-serif;
+  --foil:linear-gradient(115deg,var(--f1),var(--f2) 30%,var(--f3) 55%,var(--f4) 80%,var(--f1));
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--ob);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+.num{font-variant-numeric:tabular-nums}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#c.grabbing{cursor:grabbing}
+.hud{position:fixed;inset:0;pointer-events:none;z-index:10}
+.hud>*{pointer-events:auto}
+.glass{background:var(--glass);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border:1px solid var(--gb)}
+
+/* Barre du haut */
+.top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:12px;padding:18px 24px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(5,5,7,.7),transparent)}
+.top>*{pointer-events:auto}
+.brand{display:flex;flex-direction:column;line-height:1}
+.brand b{font-family:var(--serif);font-weight:800;font-size:22px;letter-spacing:.01em;background:linear-gradient(180deg,#fff,var(--gold2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand small{font-size:9.5px;font-weight:800;letter-spacing:.34em;color:var(--gold);margin-top:5px}
+.top .sp{flex:1}
+.pill{height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:14px;font-weight:700;font-size:14px;transition:border-color .3s}
+.pill:hover{border-color:var(--gb2)}
+.coin{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6c9,#ffd97f 35%,#c9962e 75%,#8a6418);box-shadow:inset 0 -2px 3px rgba(0,0,0,.35),0 0 12px rgba(255,217,127,.4);position:relative;flex:none}
+.coin::after{content:'E';position:absolute;inset:0;display:grid;place-items:center;font:800 11px var(--serif);color:#6b4a0c}
+.bal{padding:0 0 0 12px;overflow:hidden}
+.bal .add{height:100%;width:40px;margin-left:6px;display:grid;place-items:center;font-size:20px;font-weight:900;color:var(--ob);background:linear-gradient(135deg,var(--gold2),var(--gold))}
+.badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--gold);color:var(--ob);font-size:11px;font-weight:900;display:grid;place-items:center}
+.btn{height:48px;padding:0 22px;border-radius:14px;font-weight:800;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:10px;transition:transform .35s var(--spring),filter .3s,opacity .3s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btn-gold{position:relative;overflow:hidden;color:#1a1206;background:linear-gradient(135deg,#fff1c9,var(--gold) 45%,#a8792e);box-shadow:0 12px 40px -12px rgba(217,178,106,.8),inset 0 1px 0 rgba(255,255,255,.6)}
+.btn-gold::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.75) 50%,transparent 65%);transform:translateX(-120%);animation:shine 3.4s var(--spring) infinite}
+@keyframes shine{60%,100%{transform:translateX(120%)}}
+.btn-gold:hover{filter:brightness(1.08)}
+.btn-glass{background:rgba(255,255,255,.06);border:1px solid var(--gb);color:var(--txt)}
+.btn-glass:hover{border-color:var(--gb2)}
+.btn-sm{height:38px;padding:0 14px;font-size:13px;border-radius:12px}
+
+/* Panneau du booster sélectionné */
+.panel{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);width:min(620px,calc(100% - 32px));padding:22px 24px 20px;border-radius:26px;transition:opacity .5s,transform .7s var(--spring)}
+.panel.off{opacity:0;transform:translate(-50%,40px);pointer-events:none}
+.p-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+.p-head h1{font-family:var(--serif);font-weight:700;font-size:clamp(30px,5vw,44px);letter-spacing:-.02em;line-height:1;margin-top:6px}
+.p-head p{color:var(--mute);font-size:13.5px;margin-top:6px}
+.dots{display:flex;gap:6px;padding-bottom:6px}
+.dots i{width:7px;height:7px;border-radius:4px;background:rgba(255,255,255,.2);transition:all .4s var(--spring)}
+.dots i.on{width:22px;background:var(--gold)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0}
+.stat{padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06)}
+.stat span{display:block;font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.stat b{display:block;font-size:16px;margin-top:3px}
+.p-actions{display:flex;gap:10px;align-items:center}
+.seg{display:flex;padding:4px;border-radius:14px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.07)}
+.seg button{width:40px;height:40px;border-radius:10px;font-weight:800;font-size:13px;color:var(--mute);transition:all .35s var(--spring)}
+.seg button.on{background:var(--txt);color:var(--ob)}
+.p-actions .btn-gold{flex:1;height:48px}
+.p-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--dim);font-weight:700}
+.p-foot a{color:var(--gold)}
+.nav-arrow{position:absolute;top:44%;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:22px;transition:transform .4s var(--spring),opacity .4s}
+.nav-arrow:hover{transform:scale(1.08)}
+.nav-arrow.l{left:24px}.nav-arrow.r{right:24px}
+.nav-arrow.off{opacity:0;pointer-events:none}
+
+/* Déchirure */
+.tearbar{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:14px;transition:opacity .4s}
+.tearbar.off{opacity:0;pointer-events:none}
+.tearhint{display:flex;align-items:center;gap:12px;padding:12px 20px;border-radius:99px;font-weight:700;font-size:14px}
+.tearhint i{font-style:normal;display:inline-block;animation:nudge 1.3s ease-in-out infinite;color:var(--gold)}
+@keyframes nudge{50%{transform:translateX(10px)}}
+.counter{position:absolute;top:92px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:900;letter-spacing:.3em;color:var(--gold);transition:opacity .4s}
+.counter.off{opacity:0}
+
+/* Révélation d'un lot */
+.reveal{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);text-align:center;width:min(520px,calc(100% - 32px));padding:18px 22px;border-radius:24px;transition:opacity .5s,transform .7s var(--spring)}
+.reveal.off{opacity:0;transform:translate(-50%,30px);pointer-events:none}
+.reveal .tier{font-size:11px;font-weight:900;letter-spacing:.3em}
+.reveal h2{font-family:var(--serif);font-size:clamp(22px,4vw,30px);font-weight:700;margin:6px 0 4px}
+.reveal .val{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:18px}
+.reveal .acts{display:flex;gap:10px;justify-content:center;margin-top:14px}
+
+/* Récap */
+.sheet{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:rgba(5,5,7,.45);transition:opacity .5s}
+.sheet.off{opacity:0;pointer-events:none}
+.sheet-box{width:min(720px,100%);max-height:calc(100% - 40px);overflow:auto;padding:26px;border-radius:28px}
+.sheet-box h2{font-family:var(--serif);font-size:30px;font-weight:700;letter-spacing:-.02em}
+.sheet-box>p{color:var(--mute);font-size:14px;margin:4px 0 18px}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.it{position:relative;padding:12px;border-radius:18px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.07);text-align:center;overflow:hidden}
+.it::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--c);box-shadow:0 0 18px var(--c)}
+.it img{width:100%;height:120px;object-fit:contain;filter:drop-shadow(0 10px 14px rgba(0,0,0,.7))}
+.it .coinbig{width:70px;height:70px;margin:25px auto;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6c9,#ffd97f 35%,#c9962e 75%,#8a6418);display:grid;place-items:center;font:800 16px var(--serif);color:#5f420b}
+.it b{display:block;font-size:12.5px;margin-top:6px;line-height:1.25}
+.it span{display:block;font-size:10px;font-weight:900;letter-spacing:.14em;color:var(--c);margin-top:4px}
+.it .v{display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;margin-top:6px}
+.it .v .coin{width:14px;height:14px}.it .v .coin::after{font-size:8px}
+.it button{margin-top:8px;width:100%}
+.it.sold{opacity:.45}
+.sheet-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:18px}
+.sheet-sum{margin-top:14px;color:var(--mute);font-size:13.5px}
+.sheet-sum b{color:var(--txt)}
+
+/* Tiroir Coffre */
+.drawer{position:absolute;top:0;right:0;bottom:0;width:min(420px,100%);padding:84px 20px 20px;border-radius:0;border-width:0 0 0 1px;transition:transform .7s var(--spring);overflow:auto}
+.drawer.off{transform:translateX(105%)}
+.drawer h2{font-family:var(--serif);font-size:28px;font-weight:700}
+.drawer .items{grid-template-columns:repeat(2,1fr);margin-top:14px}
+.drawer-x{position:absolute;top:22px;right:20px}
+
+/* Modales */
+.modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,5,7,.6)}
+.modal.on{display:flex}
+.modal-box{position:relative;width:100%;max-width:420px;padding:30px;border-radius:26px}
+.modal-box h3{font-family:var(--serif);font-size:28px;font-weight:700}
+.modal-box>p{color:var(--mute);font-size:14px;margin:6px 0 18px}
+.modal-box form{display:flex;flex-direction:column;gap:10px}
+.input{height:48px;padding:0 16px;border-radius:14px;background:rgba(0,0,0,.4);border:1px solid var(--gb);outline:none;width:100%}
+.input:focus{border-color:var(--gold)}
+.err{color:#ff8a8a;font-size:13px;font-weight:600;min-height:16px}
+.switch{text-align:center;font-size:13px;color:var(--mute);margin-top:12px}
+.switch button{color:var(--gold);font-weight:700}
+.x{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:12px}
+
+/* Chargement */
+.loader{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:radial-gradient(ellipse at 50% 45%,#141018,#050507 70%);transition:opacity 1.2s ease,visibility 1.2s}
+.loader.done{opacity:0;visibility:hidden}
+.vault-ring{width:120px;height:120px;border-radius:50%;border:2px solid rgba(217,178,106,.25);border-top-color:var(--gold);animation:spin 1.4s linear infinite;box-shadow:0 0 60px rgba(201,168,255,.18)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader b{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:.02em}
+.loader small{font-size:11px;letter-spacing:.3em;color:var(--gold);font-weight:800}
+.bar{width:200px;height:3px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .3s}
+.fallback{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;background:var(--ob)}
+.fallback.on{display:flex}
+.toasts{position:fixed;top:84px;left:50%;transform:translateX(-50%);z-index:35;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{padding:12px 18px;border-radius:14px;font-weight:700;font-size:14px;animation:tin .5s var(--spring)}
+.toast.ok{color:#8fffb8}.toast.bad{color:#ff8a8a}
+@keyframes tin{from{transform:translateY(-12px);opacity:0}}
+.flash{position:fixed;inset:0;z-index:20;pointer-events:none;opacity:0;background:var(--c,#fff)}
+.flash.go{animation:fl .9s ease-out}
+@keyframes fl{0%{opacity:.7}100%{opacity:0}}
+
+@media (max-width:720px){
+  .top{padding:12px 14px;gap:8px}
+  .brand b{font-size:18px}.brand small{display:none}
+  .pill{height:38px;padding:0 10px;font-size:13px}
+  .hide-m{display:none!important}
+  .panel{bottom:12px;padding:16px 16px 14px;border-radius:22px}
+  .stats{grid-template-columns:repeat(2,1fr);margin:12px 0}
+  .seg button{width:34px}
+  .nav-arrow{top:36%;width:46px;height:46px}
+  .nav-arrow.l{left:10px}.nav-arrow.r{right:10px}
+  .counter{top:70px}
+  .items{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="flash" id="flash"></div>
+
+<div class="loader" id="loader">
+  <div class="vault-ring"></div>
+  <b>Ouverture de la chambre forte</b>
+  <div class="bar"><i id="barI"></i></div>
+  <small>EDEN VAULT</small>
+</div>
+<div class="fallback" id="fallback">
+  <div><h2 style="font-family:var(--serif);font-size:28px;margin-bottom:10px">La 3D n'a pas pu démarrer</h2>
+  <p style="color:var(--mute);margin-bottom:18px">Ton navigateur ou ta connexion bloque le rendu 3D.</p>
+  <a class="btn btn-gold" href="/vault">Ouvrir la version classique</a></div>
+</div>
+
+<div class="hud" id="hud">
+  <div class="top">
+    <a class="brand" href="/vault3d"><b>Eden Vault</b><small>LA CHAMBRE FORTE</small></a>
+    <div class="sp"></div>
+    <a class="pill glass hide-m" href="/vault" title="Version classique">Version classique ↗</a>
+    <button class="pill glass" id="soundBtn" aria-label="Son">🔊</button>
+    <button class="pill glass" id="chestBtn">Coffre <span class="badge" id="chestN">0</span></button>
+    <div id="userSlot"></div>
+  </div>
+
+  <button class="nav-arrow l glass" id="prevBtn" aria-label="Précédent">‹</button>
+  <button class="nav-arrow r glass" id="nextBtn" aria-label="Suivant">›</button>
+
+  <div class="panel glass" id="panel">
+    <div class="p-head">
+      <div><div class="eyebrow" id="pEyebrow">Booster virtuel</div><h1 id="pName">—</h1><p id="pTag"></p></div>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Prix</span><b class="num" id="sPrice">—</b></div>
+      <div class="stat"><span>Valeur moy.</span><b class="num" id="sEv">—</b></div>
+      <div class="stat"><span>Meilleur lot</span><b class="num" id="sBest" style="color:var(--gold2)">—</b></div>
+      <div class="stat"><span>Lots</span><b id="sLots">—</b></div>
+    </div>
+    <div class="p-actions">
+      <div class="seg" id="seg"></div>
+      <button class="btn btn-gold" id="openBtn">Ouvrir</button>
+    </div>
+    <div class="p-foot"><span>Glisse ou utilise ← → pour changer de booster</span><a href="/vault" class="hide-m">Upgrade · Classement · Profil ↗</a></div>
+  </div>
+
+  <div class="counter off" id="counter"></div>
+  <div class="tearbar off" id="tearbar">
+    <div class="tearhint glass">Glisse sur le booster de gauche à droite pour le déchirer <i>→</i></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-glass btn-sm" id="tearBtn">Déchirer</button><button class="btn btn-glass btn-sm" id="allBtn">Tout ouvrir</button></div>
+  </div>
+
+  <div class="reveal glass off" id="reveal">
+    <div class="tier" id="rTier"></div>
+    <h2 id="rName"></h2>
+    <div class="val num"><i class="coin"></i><span id="rVal"></span></div>
+    <div class="acts"><button class="btn btn-gold btn-sm" id="rNext">Suivant</button></div>
+  </div>
+
+  <div class="sheet off" id="sheet">
+    <div class="sheet-box glass">
+      <div class="eyebrow">Récapitulatif</div>
+      <h2 id="shTitle">Tes gains</h2>
+      <p id="shSub"></p>
+      <div class="items" id="shItems"></div>
+      <div class="sheet-sum" id="shSum"></div>
+      <div class="sheet-actions" id="shActions"></div>
+    </div>
+  </div>
+
+  <div class="drawer glass off" id="drawer">
+    <button class="pill glass drawer-x" id="drawerX">Fermer ✕</button>
+    <div class="eyebrow">Ton coffre</div>
+    <h2>Collection</h2>
+    <p style="color:var(--mute);font-size:13px;margin-top:4px" id="drSub"></p>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-glass btn-sm" id="sellAllBtn">Tout revendre</button><a class="btn btn-glass btn-sm" href="/vault#/inventory">Livraison ↗</a></div>
+    <div class="items" id="drItems"></div>
+  </div>
+</div>
+
+<div class="modal" id="mAuth"><div class="modal-box glass">
+  <button class="x glass" data-close>✕</button>
+  <h3 id="aTitle">Connexion</h3><p>Même compte que la version classique.</p>
+  <form id="aForm">
+    <input class="input" name="name" id="aName" placeholder="Prénom et nom" hidden>
+    <input class="input" name="email" type="email" placeholder="E-mail" required>
+    <input class="input" name="password" type="password" placeholder="Mot de passe" minlength="6" required>
+    <div class="err" id="aErr"></div>
+    <button class="btn btn-gold" id="aSubmit">Se connecter</button>
+  </form>
+  <div class="switch"><span id="aSwT">Pas de compte ?</span> <button id="aSw">Créer un compte</button></div>
+</div></div>
+<div class="modal" id="mCode"><div class="modal-box glass">
+  <button class="x glass" data-close>✕</button>
+  <h3>Ajouter des EC</h3><p>Entre ton code à usage unique. Monnaie virtuelle de test, sans valeur réelle.</p>
+  <form id="cForm">
+    <input class="input" name="code" placeholder="EDEN-XXXX-XXXX-XXXX" autocomplete="off" required style="font-family:ui-monospace,monospace;letter-spacing:.06em">
+    <div class="err" id="cErr"></div>
+    <button class="btn btn-gold">Créditer</button>
+  </form>
+</div></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+  // Filet de sécurité : si le module 3D ne démarre pas (CDN bloqué, WebGL absent), on propose la version classique
+  setTimeout(() => { if (!window.__v3d) document.getElementById('fallback').classList.add('on'); }, 15000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { Reflector } from 'three/addons/objects/Reflector.js';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => (Number(n) || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const MOBILE = matchMedia('(max-width:720px)').matches || /Mobi|Android/i.test(navigator.userAgent);
+const TIERS = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+const TIER_FR = { common: 'COMMUN', uncommon: 'PEU COMMUN', rare: 'RARE', epic: 'ÉPIQUE', legendary: 'LÉGENDAIRE' };
+const TIER_COLOR = { common: '#b8bcc8', uncommon: '#7fd9ff', rare: '#c9a8ff', epic: '#ffb3e6', legendary: '#ffd97f' };
+
+// ════════════════════════════════════════════════════════════
+// ÉTAT + API (même serveur que /vault)
+// ════════════════════════════════════════════════════════════
+const S = { cfg: null, st: null, token: null, sel: 0, count: 1, mode: 'boot', muted: false };
+try { S.token = localStorage.getItem('edn_token'); S.muted = localStorage.getItem('vault_muted') === 'true'; } catch {}
+async function api(action, body = {}) {
+  const h = { 'Content-Type': 'application/json' };
+  if (S.token) h.Authorization = 'Bearer ' + S.token;
+  const r = await fetch('/api/vault', { method: 'POST', headers: h, body: JSON.stringify({ action, ...body }) });
+  const j = await r.json().catch(() => ({ error: 'Réponse invalide' }));
+  if (!r.ok) { if (r.status === 401) { logout(); openAuth(); } const e = new Error(j.error || 'Erreur'); e.data = j; throw e; }
+  return j;
+}
+const item = id => S.cfg.items[id];
+const imgOf = it => it.pack || (it.img ? S.cfg.imgBase + it.img : null);
+
+// ════════════════════════════════════════════════════════════
+// SON (synthèse WebAudio)
+// ════════════════════════════════════════════════════════════
+const sfx = (() => {
+  let ctx, master;
+  const ok = () => { if (S.muted) return null; if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; ctx = new AC(); master = ctx.createGain(); master.gain.value = .55; master.connect(ctx.destination); } if (ctx.state === 'suspended') ctx.resume(); return ctx; };
+  const tone = (f, t, d, { type = 'sine', vol = .2, slide = 0, attack = .005 } = {}) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, f * slide), t + d); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g).connect(master); o.start(t); o.stop(t + d + .05); };
+  const noise = (t, d, { vol = .2, freq = 2000, q = 1, type = 'bandpass', sweep = 0 } = {}) => { const n = Math.max(1, ctx.sampleRate * d | 0), b = ctx.createBuffer(1, n, ctx.sampleRate), a = b.getChannelData(0); for (let i = 0; i < n; i++) a[i] = Math.random() * 2 - 1; const s = ctx.createBufferSource(); s.buffer = b; const f = ctx.createBiquadFilter(); f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q; if (sweep) f.frequency.exponentialRampToValueAtTime(sweep, t + d); const g = ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); s.connect(f).connect(g).connect(master); s.start(t); };
+  const N = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.5, 1567.98];
+  return {
+    click() { if (!ok()) return; tone(880, ctx.currentTime, .06, { type: 'triangle', vol: .07 }); },
+    swish() { if (!ok()) return; noise(ctx.currentTime, .35, { vol: .12, freq: 600, sweep: 3000, q: .7 }); },
+    crackle() { if (!ok()) return; noise(ctx.currentTime, .045, { vol: .16, freq: 2600 + Math.random() * 2400, q: 2.5 }); },
+    tear() { if (!ok()) return; const t = ctx.currentTime; noise(t, .35, { vol: .32, freq: 1800, sweep: 7000, q: 1.2 }); noise(t + .05, .25, { vol: .18, freq: 5000, type: 'highpass' }); },
+    hum() { if (!ok()) return; const t = ctx.currentTime; tone(55, t, 1.4, { type: 'sawtooth', vol: .08, slide: 1.6 }); },
+    burst() { if (!ok()) return; const t = ctx.currentTime; noise(t, .7, { vol: .3, freq: 8000, sweep: 300, type: 'lowpass' }); tone(90, t, .6, { vol: .32, slide: .4 }); },
+    coin() { if (!ok()) return; const t = ctx.currentTime; tone(1318.5, t, .12, { type: 'square', vol: .05 }); tone(1975.5, t + .07, .3, { type: 'square', vol: .05 }); },
+    reveal(tier) {
+      if (!ok()) return; const t = ctx.currentTime, l = TIERS.indexOf(tier);
+      const seq = [[0, 2, 4], [0, 2, 4, 5], [0, 2, 4, 5, 7], [0, 2, 4, 5, 7, 8], [0, 1, 2, 4, 5, 7, 8]][l];
+      seq.forEach((n, i) => tone(N[n], t + i * .075, .7 + l * .15, { type: 'triangle', vol: .09 + l * .015 }));
+      if (l >= 3) { tone(65.4, t, 1.6, { vol: .35 }); noise(t, 1.2, { vol: .12, freq: 9000, type: 'highpass' }); }
+      if (l >= 4) for (let i = 0; i < 14; i++) tone(2000 + Math.random() * 3000, t + .5 + i * .06, .25, { vol: .025 });
+    },
+  };
+})();
+const vibrate = p => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
+
+// ════════════════════════════════════════════════════════════
+// MOTEUR 3D
+// ════════════════════════════════════════════════════════════
+const canvas = $('#c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, MOBILE ? 1.5 : 1.75));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050507);
+scene.fog = new THREE.FogExp2(0x050507, .028);
+const camera = new THREE.PerspectiveCamera(MOBILE ? 52 : 40, innerWidth / innerHeight, .1, 200);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), .04).texture;
+
+const manager = new THREE.LoadingManager();
+manager.onProgress = (u, l, t) => { $('#barI').style.width = (l / t * 100) + '%'; };
+const allLoaded = new Promise(r => { manager.onLoad = r; });
+const loader = new THREE.TextureLoader(manager); loader.setCrossOrigin('anonymous');
+const lazyLoader = new THREE.TextureLoader(); lazyLoader.setCrossOrigin('anonymous');
+
+// Post-traitement : bloom sur les lumières et reflets
+const rt = new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: MOBILE ? 0 : 4 });
+const composer = new EffectComposer(renderer, rt);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .6, .5, .88);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+const BLOOM_BASE = .6;
+
+// ── Décor : panorama Canva étendu par Adobe, sur un cylindre ─────
+const pano = loader.load(MOBILE ? '/img/vault3d/pano-sm.jpg' : '/img/vault3d/pano.jpg');
+pano.colorSpace = THREE.SRGBColorSpace;
+pano.wrapS = THREE.RepeatWrapping; pano.repeat.x = -1; pano.offset.x = 1;
+{
+  const L = Math.PI * 1.22, R = 30, H = R * L / (4096 / 1152);
+  const geo = new THREE.CylinderGeometry(R, R, H, 96, 1, true, Math.PI - L / 2, L);
+  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: pano, side: THREE.BackSide, color: 0x9a9a9a, fog: false }));
+  m.position.set(0, 3.2 - H * .05, -4);
+  scene.add(m);
+}
+
+// ── Sol : miroir + vernis sombre + incrustations dorées ──────────
+const RING_R = 4.6;
+if (!MOBILE) {
+  const mirror = new Reflector(new THREE.CircleGeometry(40, 64), { clipBias: .003, textureWidth: innerWidth * .6, textureHeight: innerHeight * .6, color: 0x55555f });
+  mirror.rotation.x = -Math.PI / 2; mirror.position.y = -.001;
+  scene.add(mirror);
+}
+{
+  // Vernis : dégradé radial qui assombrit le miroir sur les bords
+  const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+  const g = cv.getContext('2d'), gr = g.createRadialGradient(256, 256, 40, 256, 256, 256);
+  gr.addColorStop(0, 'rgba(8,8,11,.55)'); gr.addColorStop(.6, 'rgba(6,6,8,.82)'); gr.addColorStop(1, 'rgba(5,5,7,1)');
+  g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+  const tx = new THREE.CanvasTexture(cv);
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ map: tx, transparent: true, roughness: .3, metalness: .5, color: MOBILE ? 0x222228 : 0xffffff }));
+  top.rotation.x = -Math.PI / 2; top.position.y = .002;
+  scene.add(top);
+  const goldM = new THREE.MeshBasicMaterial({ color: 0xd9b26a, transparent: true, opacity: .75 });
+  const ring1 = new THREE.Mesh(new THREE.RingGeometry(RING_R + 1.25, RING_R + 1.29, 128), goldM); ring1.rotation.x = -Math.PI / 2; ring1.position.y = .01; scene.add(ring1);
+  const ring2 = new THREE.Mesh(new THREE.RingGeometry(RING_R - 1.3, RING_R - 1.27, 128), goldM); ring2.rotation.x = -Math.PI / 2; ring2.position.y = .01; scene.add(ring2);
+  for (const x of [-1.6, 1.6]) { const l = new THREE.Mesh(new THREE.PlaneGeometry(.035, 30), goldM); l.rotation.x = -Math.PI / 2; l.position.set(x, .01, RING_R + 16); scene.add(l); }
+}
+
+// ── Lumières ─────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x8a7f9a, .35));
+const key = new THREE.DirectionalLight(0xfff1dc, 1.4); key.position.set(3, 8, 9); scene.add(key);
+const rimL = new THREE.PointLight(0x7fd9ff, 18, 14, 2); rimL.position.set(-4, 3.5, RING_R + 1); scene.add(rimL);
+const rimR = new THREE.PointLight(0xffb3e6, 18, 14, 2); rimR.position.set(4, 3.5, RING_R + 1); scene.add(rimR);
+const spot = new THREE.SpotLight(0xfff4de, 60, 14, .42, .5, 1.6); spot.position.set(0, 8, RING_R + 1.5); scene.add(spot); scene.add(spot.target);
+const burstLight = new THREE.PointLight(0xffffff, 0, 10, 2); scene.add(burstLight);
+
+// ── Poussière en suspension ─────────────────────────────────────
+const dust = (() => {
+  const n = MOBILE ? 400 : 1100, p = new Float32Array(n * 3), s = new Float32Array(n);
+  for (let i = 0; i < n; i++) { p.set([(Math.random() - .5) * 26, Math.random() * 9, (Math.random() - .5) * 22], i * 3); s[i] = Math.random(); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3)); g.setAttribute('seed', new THREE.BufferAttribute(s, 1));
+  const m = new THREE.ShaderMaterial({
+    uniforms: { t: { value: 0 }, pr: { value: renderer.getPixelRatio() } },
+    vertexShader: `attribute float seed; uniform float t; uniform float pr; varying float a;
+      void main(){ vec3 q=position; q.y=mod(q.y+t*(.05+seed*.08),9.0); q.x+=sin(t*.2+seed*40.)*.3;
+      vec4 mv=modelViewMatrix*vec4(q,1.); gl_Position=projectionMatrix*mv; gl_PointSize=(1.+seed*2.2)*pr*(8./-mv.z);
+      a=(.3+.7*sin(t*(1.+seed)+seed*30.))*.55; }`,
+    fragmentShader: `varying float a; void main(){ float d=length(gl_PointCoord-.5); gl_FragColor=vec4(1.,.9,.72,smoothstep(.5,0.,d)*a); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  });
+  const pts = new THREE.Points(g, m); scene.add(pts); return m;
+})();
+
+// ════════════════════════════════════════════════════════════
+// BOOSTERS VIRTUELS 3D
+// ════════════════════════════════════════════════════════════
+const foilImg = new Image(); foilImg.crossOrigin = 'anonymous';
+const foilReady = new Promise(r => { foilImg.onload = r; foilImg.onerror = r; });
+foilImg.src = '/img/vault3d/foil.jpg';
+manager.itemStart('foil'); foilReady.then(() => manager.itemEnd('foil'));
+
+const PW = 1.16, PH = 1.86, PD = .05, CRIMP = .12, SEAM = PH / 2 - CRIMP - .2; // y de la ligne de découpe
+// Géométrie « coussin » : le sachet est bombé au centre et plat sur les bords
+function pillow(y0, y1, bulge = .075) {
+  const g = new THREE.BoxGeometry(PW, y1 - y0, PD, 24, 30, 1);
+  g.translate(0, (y0 + y1) / 2, 0);
+  const p = g.attributes.position, uv = g.attributes.uv;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const nx = x / (PW / 2), ny = y / (PH / 2);
+    const b = Math.max(0, 1 - nx * nx) ** .8 * Math.max(0, 1 - Math.abs(ny) ** 5);
+    p.setZ(i, Math.sign(z || 1) * (PD / 2 + bulge * b));
+    const u = x / PW + .5;
+    uv.setXY(i, z < 0 ? 1 - u : u, (y + PH / 2) / PH);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+const G_BODY = pillow(-PH / 2 + CRIMP, SEAM);
+const G_STRIP = pillow(SEAM, PH / 2 - CRIMP); G_STRIP.translate(PW / 2, -SEAM, 0);
+const G_CRIMP = new THREE.BoxGeometry(PW, CRIMP, PD * 1.4, 1, 1, 1);
+const G_CRIMP_T = G_CRIMP.clone().translate(PW / 2, PH / 2 - CRIMP / 2 - SEAM, 0);
+const crimpTex = (() => {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 32; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, 32); gr.addColorStop(0, '#f4f5f9'); gr.addColorStop(1, '#8a8d98'); g.fillStyle = gr; g.fillRect(0, 0, 256, 32);
+  for (let x = 0; x < 256; x += 6) { g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(x + 3, 0, 3, 32); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+const crimpMat = new THREE.MeshStandardMaterial({ map: crimpTex, metalness: .9, roughness: .3 });
+
+// Visuel du sachet : foil Canva + couleurs de la box + textes
+function packTexture(box) {
+  const W = 512, H = 820, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  if (foilImg.naturalWidth) { g.drawImage(foilImg, 0, 0, 768, 768, -60, 0, H, H); g.drawImage(foilImg, 0, 0, 768, 768, -60 + H * .9, 0, H, H); }
+  else { g.fillStyle = '#6a5a9a'; g.fillRect(0, 0, W, H); }
+  // Teinte aux couleurs de la box
+  g.globalCompositeOperation = 'color';
+  const tg = g.createLinearGradient(0, 0, W, H); tg.addColorStop(0, box.theme[0]); tg.addColorStop(1, box.theme[1]);
+  g.globalAlpha = .55; g.fillStyle = tg; g.fillRect(0, 0, W, H); g.globalAlpha = 1;
+  g.globalCompositeOperation = 'multiply';
+  const vg = g.createLinearGradient(0, 0, 0, H); vg.addColorStop(0, '#9a9a9a'); vg.addColorStop(.45, '#5a5a62'); vg.addColorStop(1, '#2a2a30');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'source-over';
+  // Bande à déchirer
+  const seamPx = H * (1 - (SEAM + PH / 2) / PH);
+  g.setLineDash([10, 8]); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, seamPx); g.lineTo(W, seamPx); g.stroke(); g.setLineDash([]);
+  g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '800 20px Manrope, sans-serif'; g.textAlign = 'center';
+  g.fillText('✂  D É C H I R E R   I C I', W / 2, seamPx - 22);
+  // Médaillon
+  const cy = H * .42;
+  const mg = g.createLinearGradient(W / 2 - 80, cy - 80, W / 2 + 80, cy + 80); mg.addColorStop(0, '#fff1c9'); mg.addColorStop(.5, '#d9b26a'); mg.addColorStop(1, '#8a6418');
+  g.lineWidth = 7; g.strokeStyle = mg; g.beginPath(); g.arc(W / 2, cy, 78, 0, Math.PI * 2); g.stroke();
+  g.lineWidth = 2; g.globalAlpha = .6; g.beginPath(); g.arc(W / 2, cy, 94, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
+  g.fillStyle = mg; g.font = '800 104px Fraunces, Georgia, serif'; g.textBaseline = 'middle'; g.fillText('E', W / 2, cy + 6);
+  g.textBaseline = 'alphabetic';
+  g.fillStyle = 'rgba(255,255,255,.8)'; g.font = '800 20px Manrope, sans-serif'; g.fillText('E D E N   V A U L T', W / 2, cy + 140);
+  g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 18;
+  let fs = 74; g.font = `700 ${fs}px Fraunces, Georgia, serif`;
+  while (g.measureText(box.name).width > W - 60 && fs > 30) { fs -= 4; g.font = `700 ${fs}px Fraunces, Georgia, serif`; }
+  g.fillText(box.name, W / 2, cy + 225); g.shadowBlur = 0;
+  // Pastille
+  const label = box.free ? 'UN CADEAU À L’INTÉRIEUR' : '1 BOOSTER RÉEL À L’INTÉRIEUR';
+  g.font = '800 18px Manrope, sans-serif'; const lw = g.measureText(label).width + 44;
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 2;
+  g.beginPath(); g.roundRect(W / 2 - lw / 2, cy + 262, lw, 42, 21); g.fill(); g.stroke();
+  g.fillStyle = '#fff'; g.fillText(label, W / 2, cy + 290);
+  g.fillStyle = 'rgba(255,241,201,.9)'; g.font = '800 24px Manrope, sans-serif';
+  g.fillText(box.free ? 'OFFERT · 24 H' : `${fmt(box.price)} EC`, W / 2, H - 70);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+function packMaterial(tex) {
+  return new THREE.MeshPhysicalMaterial({ map: tex, metalness: .55, roughness: .26, clearcoat: 1, clearcoatRoughness: .12, iridescence: .85, iridescenceIOR: 1.35, iridescenceThicknessRange: [120, 700], envMapIntensity: 1.5 });
+}
+// Un sachet complet : corps + bande (pivot à gauche) + soudures
+function buildPack(box, tex) {
+  const mat = packMaterial(tex);
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(G_BODY, mat); g.add(body);
+  const crB = new THREE.Mesh(G_CRIMP, crimpMat); crB.position.y = -PH / 2 + CRIMP / 2; g.add(crB);
+  const strip = new THREE.Group(); strip.position.set(-PW / 2, SEAM, 0); g.add(strip);
+  strip.add(new THREE.Mesh(G_STRIP, mat));
+  strip.add(new THREE.Mesh(G_CRIMP_T, crimpMat));
+  // Ligne de découpe lumineuse (grandit pendant la déchirure)
+  const seamMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+  const seam = new THREE.Mesh(new THREE.PlaneGeometry(1, .03), seamMat);
+  seam.position.set(-PW / 2, SEAM, PD / 2 + .08); seam.geometry.translate(.5, 0, 0); seam.scale.x = .0001;
+  g.add(seam);
+  g.userData = { body, crB, strip, seam, seamMat, mat };
+  return g;
+}
+
+// ── Carrousel de socles ──────────────────────────────────────────
+const ring = new THREE.Group(); scene.add(ring);
+const stands = [];
+function buildStand(box, i, n) {
+  const a = i / n * Math.PI * 2;
+  const grp = new THREE.Group(); grp.position.set(Math.sin(a) * RING_R, 0, Math.cos(a) * RING_R); grp.rotation.y = a;
+  const col = new THREE.Color(box.theme[0]);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(.78, .9, 1.05, 72), new THREE.MeshPhysicalMaterial({ color: 0x0b0b0f, metalness: .7, roughness: .22, clearcoat: 1, clearcoatRoughness: .1 }));
+  base.position.y = .525; grp.add(base);
+  const gold = new THREE.MeshStandardMaterial({ color: 0xd9b26a, metalness: 1, roughness: .22, emissive: 0x2a1c04 });
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(.79, .03, 16, 96), gold); lip.rotation.x = Math.PI / 2; lip.position.y = 1.05; grp.add(lip);
+  const lip2 = new THREE.Mesh(new THREE.TorusGeometry(.9, .02, 16, 96), gold); lip2.rotation.x = Math.PI / 2; lip2.position.y = .02; grp.add(lip2);
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(.76, 64), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .35, blending: THREE.AdditiveBlending, depthWrite: false }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = 1.056; grp.add(glow);
+  // Colonne de lumière fine au-dessus du socle
+  const beamGeo = new THREE.CylinderGeometry(.62, .74, 3.2, 48, 1, true); beamGeo.translate(0, 1.6, 0);
+  const beamMat = new THREE.ShaderMaterial({
+    uniforms: { c: { value: col }, o: { value: .25 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
+    fragmentShader: 'uniform vec3 c; uniform float o; varying vec2 vUv; void main(){ gl_FragColor=vec4(c, pow(1.-vUv.y,2.2)*o); }',
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+  });
+  const beam = new THREE.Mesh(beamGeo, beamMat); beam.position.y = 1.05; grp.add(beam);
+  const halo = new THREE.Mesh(new THREE.RingGeometry(.95, .975, 96), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  halo.position.y = 2.2; grp.add(halo);
+  const tex = packTexture(box);
+  const pack = buildPack(box, tex); pack.position.y = 2.2; grp.add(pack);
+  ring.add(grp);
+  return { box, grp, pack, tex, glow, beamMat, halo, angle: a, base };
+}
+
+// ════════════════════════════════════════════════════════════
+// ANIMATIONS (tweens maison)
+// ════════════════════════════════════════════════════════════
+const tweens = new Set();
+const E = { out: t => 1 - Math.pow(1 - t, 3), inOut: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, back: t => 1 + 2.2 * Math.pow(t - 1, 3) + 1.2 * Math.pow(t - 1, 2), expo: t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t) };
+function tween(dur, fn, ease = E.out) { return new Promise(res => tweens.add({ t0: performance.now(), dur, fn, ease, res })); }
+function runTweens(now) { for (const tw of tweens) { const k = clamp((now - tw.t0) / tw.dur, 0, 1); tw.fn(tw.ease(k), k); if (k >= 1) { tweens.delete(tw); tw.res(); } } }
+
+// Caméra : position/regard courants et cibles
+const cam = { pos: new THREE.Vector3(), look: new THREE.Vector3(), tPos: new THREE.Vector3(), tLook: new THREE.Vector3(), shake: 0 };
+const VIEW_BROWSE = { pos: new THREE.Vector3(0, 2.35, RING_R + (MOBILE ? 6.6 : 5.6)), look: new THREE.Vector3(0, 1.75, RING_R - .6) };
+const STAGE = new THREE.Vector3(0, 2.3, RING_R + 2.35);
+const VIEW_STAGE = { pos: new THREE.Vector3(0, 2.45, RING_R + (MOBILE ? 8.6 : 7.4)), look: new THREE.Vector3(0, 2.3, RING_R + 2.3) };
+cam.pos.set(0, 5.5, RING_R + 14); cam.look.copy(VIEW_BROWSE.look); cam.tPos.copy(VIEW_BROWSE.pos); cam.tLook.copy(VIEW_BROWSE.look);
+function setView(v) { cam.tPos.copy(v.pos); cam.tLook.copy(v.look); }
+
+// ── Rotation du carrousel ─────────────────────────────────────────
+let ringAngle = 0, ringTarget = 0, dragRing = null;
+function selectIndex(i, silent) {
+  const n = stands.length; if (!n) return;
+  i = (i % n + n) % n;
+  // Chemin le plus court vers le socle choisi
+  let target = -stands[i].angle;
+  while (target - ringTarget > Math.PI) target -= Math.PI * 2;
+  while (target - ringTarget < -Math.PI) target += Math.PI * 2;
+  ringTarget = target; S.sel = i;
+  if (!silent) sfx.swish();
+  renderPanel();
+}
+
+// ════════════════════════════════════════════════════════════
+// EFFETS : particules, onde de choc, rayons
+// ════════════════════════════════════════════════════════════
+const fxGroup = new THREE.Group(); scene.add(fxGroup);
+const bursts = [];
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.35, 'rgba(255,255,255,.8)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+function particleBurst(pos, color, n = 400, speed = 4) {
+  const p = new Float32Array(n * 3), v = [];
+  for (let i = 0; i < n; i++) { p.set([pos.x, pos.y, pos.z], i * 3); const d = new THREE.Vector3().randomDirection().multiplyScalar(speed * (.3 + Math.random())); d.y += 1.5; v.push(d); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  const m = new THREE.PointsMaterial({ map: dotTex, color, size: .07, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false });
+  const pts = new THREE.Points(g, m); fxGroup.add(pts);
+  bursts.push({ pts, v, life: 1, g });
+}
+function updateBursts(dt) {
+  for (let i = bursts.length - 1; i >= 0; i--) {
+    const b = bursts[i]; b.life -= dt * .55;
+    const a = b.g.attributes.position;
+    for (let k = 0; k < b.v.length; k++) { const v = b.v[k]; v.y -= 3.2 * dt; v.multiplyScalar(.985); a.setXYZ(k, a.getX(k) + v.x * dt, a.getY(k) + v.y * dt, a.getZ(k) + v.z * dt); }
+    a.needsUpdate = true; b.pts.material.opacity = Math.max(0, b.life);
+    if (b.life <= 0) { fxGroup.remove(b.pts); b.g.dispose(); b.pts.material.dispose(); bursts.splice(i, 1); }
+  }
+}
+function shockwave(pos, color) {
+  const m = new THREE.Mesh(new THREE.RingGeometry(.2, .3, 96), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  m.position.copy(pos); m.lookAt(camera.position); fxGroup.add(m);
+  tween(1100, e => { m.scale.setScalar(1 + e * 14); m.material.opacity = .9 * (1 - e); }).then(() => { fxGroup.remove(m); m.geometry.dispose(); m.material.dispose(); });
+}
+const raysTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+  g.translate(256, 256);
+  for (let i = 0; i < 28; i++) { g.rotate(Math.PI * 2 / 28); const gr = g.createLinearGradient(0, 0, 256, 0); gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(0, 0); g.lineTo(256, -14); g.lineTo(256, 14); g.fill(); }
+  return new THREE.CanvasTexture(c);
+})();
+const rays = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ map: raysTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+rays.position.copy(STAGE).add(new THREE.Vector3(0, .1, -.9)); scene.add(rays);
+function flash(color) { const f = $('#flash'); f.style.setProperty('--c', color); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
+
+// ════════════════════════════════════════════════════════════
+// OUVERTURE EN 3D
+// ════════════════════════════════════════════════════════════
+let tearCtl = null;          // contrôle de la déchirure en cours
+let autoAll = false;
+function prizeMesh(it) {
+  return new Promise(resolve => {
+    const make = (tex, ar) => {
+      tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+      const h = it.kind === 'display' ? 1.25 : 1.55, w = h * ar;
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: .03, side: THREE.DoubleSide, toneMapped: false, color: 0xe6e6e6 }));
+      resolve(m);
+    };
+    const src = imgOf(it);
+    if (it.kind === 'coin' || !src) {
+      // Pièce EC dessinée
+      const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+      const gr = g.createRadialGradient(200, 170, 20, 256, 256, 250); gr.addColorStop(0, '#fff8d6'); gr.addColorStop(.35, '#ffd97f'); gr.addColorStop(.75, '#c9962e'); gr.addColorStop(1, '#7a5610');
+      g.fillStyle = gr; g.beginPath(); g.arc(256, 256, 240, 0, Math.PI * 2); g.fill();
+      g.lineWidth = 14; g.strokeStyle = '#8a6418'; g.stroke();
+      g.fillStyle = '#5f420b'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '800 150px Fraunces, Georgia, serif'; g.fillText(String(it.value).replace('.', ','), 256, 236);
+      g.font = '900 54px Manrope, sans-serif'; g.fillText('EC', 256, 356);
+      return make(new THREE.CanvasTexture(c), 1);
+    }
+    lazyLoader.load(src, t => make(t, t.image.width / t.image.height), undefined, () => make(new THREE.CanvasTexture(document.createElement('canvas')), .65));
+  });
+}
+
+async function openFlow() {
+  if (S.mode !== 'browse') return;
+  const st = stands[S.sel], b = st.box;
+  if (!S.token) return openAuth();
+  const n = b.free ? 1 : S.count, cost = b.price * n;
+  if (!b.free && (S.st?.balance ?? 0) + 1e-9 < cost) return openCode();
+  S.mode = 'busy'; $('#openBtn').disabled = true;
+  let resp;
+  try { resp = await api('open', { boxId: b.id, count: n }); }
+  catch (e) { S.mode = 'browse'; renderPanel(); toast(e.message, 'bad'); if (e.data?.dailyNext && S.st) S.st.dailyNext = e.data.dailyNext; return; }
+  if (!b.free) setBalance(S.st.balance - cost);
+  $('#panel').classList.add('off'); arrows(false);
+  setView(VIEW_STAGE); sfx.hum();
+  autoAll = false;
+  const prizes = await Promise.all(resp.results.map(r => prizeMesh(item(r.item))));
+  for (let i = 0; i < resp.results.length; i++) await openOne(st, resp.results[i], prizes[i], i, resp.results.length);
+  S.st = resp.state; setBalance(S.st.balance); renderUser();
+  showSummary(b, resp.results);
+}
+
+async function openOne(st, r, prize, i, n) {
+  const it = item(r.item), color = new THREE.Color(TIER_COLOR[r.tier]), lvl = TIERS.indexOf(r.tier);
+  // Nouveau sachet qui part du socle vers la scène
+  const pack = buildPack(st.box, st.tex);
+  const from = new THREE.Vector3(); st.pack.getWorldPosition(from);
+  pack.position.copy(from); scene.add(pack);
+  st.pack.visible = false;
+  const { strip, seam, seamMat, body, crB, mat } = pack.userData;
+  seamMat.color.copy(color);
+  prize.position.set(0, SEAM - .95, 0); prize.scale.setScalar(.72); pack.add(prize);
+  $('#counter').textContent = n > 1 ? `BOOSTER ${i + 1} / ${n}` : st.box.free ? 'COFFRE DU JOUR' : 'BOOSTER VIRTUEL';
+  $('#counter').classList.remove('off');
+  const fromRotY = pack.rotation.y;
+  await tween(900, e => { pack.position.lerpVectors(from, STAGE, e); pack.rotation.y = lerp(fromRotY + Math.PI * 2, 0, e); }, E.inOut);
+  st.pack.visible = true; st.pack.scale.setScalar(.01);
+  tween(700, e => st.pack.scale.setScalar(Math.max(.01, e)), E.back);
+
+  // ── Déchirure ──
+  S.mode = 'tear'; $('#tearbar').classList.remove('off'); $('#allBtn').style.display = n > 1 && !autoAll ? '' : 'none';
+  await new Promise(resolve => {
+    let p = 0, lastCrack = 0, done = false;
+    const setP = v => {
+      p = clamp(v, 0, 1);
+      strip.rotation.z = p * .32; strip.position.y = SEAM + p * .05;
+      seam.scale.x = Math.max(.0001, PW * p); seamMat.opacity = p;
+      burstLight.color.copy(color); burstLight.position.copy(STAGE).add(new THREE.Vector3(0, .6, -.7)); burstLight.intensity = p * 3;
+      if (p - lastCrack > .07) { sfx.crackle(); vibrate(4); lastCrack = p; }
+      if (p >= 1) finish();
+    };
+    const finish = () => { if (done) return; done = true; tearCtl = null; resolve(); };
+    const auto = () => { if (done) return; const p0 = p; tween(autoAll ? 280 : 520, e => setP(lerp(p0, 1, e)), E.inOut); };
+    tearCtl = { get p() { return p; }, setP, release() { if (p > .55) auto(); else { const p0 = p; tween(260, e => setP(lerp(p0, 0, e))); lastCrack = 0; } }, auto };
+    if (autoAll) setTimeout(auto, 300);
+  });
+  $('#tearbar').classList.add('off');
+  S.mode = 'anim';
+
+  // ── Explosion de lumière + la bande s'envole ──
+  sfx.tear(); vibrate(30);
+  const sv = new THREE.Vector3(2.4, 3.2, 1.2), sp = strip.position.clone();
+  tween(900, (e, k) => { strip.position.set(sp.x + sv.x * k * .9, sp.y + sv.y * k - 2.2 * k * k, sp.z + sv.z * k); strip.rotation.z = .32 + k * 5; strip.rotation.x = k * 3; }, t => t);
+  seamMat.opacity = 1;
+  const lightUp = tween(500, e => { burstLight.intensity = 3 + e * (4 + lvl * 4); bloom.strength = BLOOM_BASE + e * (.08 + lvl * .14); });
+  const fx = autoAll ? .55 : 1;
+  await sleep(260 * fx);
+
+  // ── Le vrai booster sort du sachet ──
+  sfx.swish();
+  const p0 = prize.position.clone();
+  await tween(1000 * fx, e => { prize.position.y = lerp(p0.y, SEAM + .95, e); prize.scale.setScalar(lerp(.72, .9, e)); }, E.out);
+  await lightUp;
+
+  // ── Présentation : le sachet tombe, le lot tourne et grandit ──
+  const wp = new THREE.Vector3(); prize.getWorldPosition(wp);
+  scene.attach(prize);
+  const bodyStart = pack.position.clone();
+  const packMat = mat; packMat.transparent = true;
+  tween(900, e => { pack.position.y = bodyStart.y - e * 3.2; pack.rotation.x = e * .9; packMat.opacity = 1 - e; }, E.inOut).then(() => { scene.remove(pack); packMat.dispose(); });
+  const target = STAGE.clone().add(new THREE.Vector3(0, .38, .55));
+  tween(1200 * fx, e => { prize.position.lerpVectors(wp, target, e); prize.rotation.y = (1 - e) * Math.PI * 2; prize.scale.setScalar(lerp(.9, 1.2, e)); }, E.out);
+  await sleep(250 * fx);
+
+  // Effets selon la rareté
+  sfx.reveal(r.tier);
+  particleBurst(target, color, 160 + lvl * 160, 2.5 + lvl);
+  if (lvl >= 2) shockwave(target, color);
+  if (lvl >= 3) { flash(TIER_COLOR[r.tier]); cam.shake = lvl === 4 ? .22 : .12; sfx.burst(); vibrate(lvl === 4 ? [80, 40, 80, 40, 200] : [60, 30, 120]); particleBurst(target, new THREE.Color(0xffffff), 200, 5); }
+  rays.material.color.copy(color);
+  tween(700, e => { rays.material.opacity = e * [.06, .1, .22, .32, .42][lvl]; });
+  if (it.kind === 'coin') sfx.coin();
+
+  // Carte d'info
+  $('#rTier').textContent = TIER_FR[r.tier]; $('#rTier').style.color = TIER_COLOR[r.tier];
+  $('#rName').textContent = it.name; $('#rVal').textContent = fmt(it.value) + ' EC';
+  $('#rNext').textContent = i < n - 1 ? 'Booster suivant' : 'Voir le récap';
+  $('#reveal').classList.remove('off');
+  S.mode = 'reveal';
+  prize.userData.spin = true;
+  await new Promise(res => {
+    const go = () => { $('#rNext').onclick = null; res(); };
+    $('#rNext').onclick = go;
+    if (autoAll) setTimeout(go, lvl >= 3 ? 2200 : 1300);
+  });
+  $('#reveal').classList.add('off');
+  prize.userData.spin = false;
+  // Le lot file vers le coffre (en haut à droite)
+  const pp = prize.position.clone();
+  tween(700, e => { prize.position.lerpVectors(pp, pp.clone().add(new THREE.Vector3(3.5, 2.5, -1)), e); prize.scale.setScalar(lerp(1.2, .1, e)); prize.material.opacity = 1 - e; }, E.inOut).then(() => { scene.remove(prize); prize.geometry.dispose(); prize.material.map?.dispose(); prize.material.dispose(); });
+  tween(500, e => { rays.material.opacity *= (1 - e); burstLight.intensity *= (1 - e); bloom.strength = lerp(bloom.strength, BLOOM_BASE, e); });
+  bumpChest();
+  await sleep(350);
+}
+
+function showSummary(b, results) {
+  $('#counter').classList.add('off');
+  const total = results.reduce((s, r) => s + item(r.item).value, 0);
+  $('#shTitle').textContent = results.length > 1 ? `${results.length} boosters ouverts` : 'Ton lot';
+  $('#shSub').textContent = b.name;
+  const card = r => {
+    const it = item(r.item), src = imgOf(it);
+    return `<div class="it" style="--c:${TIER_COLOR[r.tier]}" data-uid="${r.uid || ''}">
+      ${it.kind === 'coin' || !src ? `<div class="coinbig">${String(it.value).replace('.', ',')}</div>` : `<img src="${src}" alt="">`}
+      <b>${esc(it.name)}</b><span>${TIER_FR[r.tier]}</span><div class="v num"><i class="coin"></i>${fmt(it.value)}</div>
+      ${r.uid ? `<button class="btn btn-glass btn-sm" data-sell="${r.uid}">Revendre +${fmt(it.value * S.cfg.sellback)}</button>` : '<div style="font-size:11px;color:#8fffb8;margin-top:10px;font-weight:800">Crédité</div>'}</div>`;
+  };
+  $('#shItems').innerHTML = results.map(card).join('');
+  $('#shSum').innerHTML = b.free ? '' : `Valeur tirée <b class="num">${fmt(total)} EC</b> pour <b class="num">${fmt(b.price * results.length)} EC</b> misés`;
+  const acts = () => {
+    const left = results.filter(r => r.uid && !document.querySelector(`.it[data-uid="${r.uid}"]`)?.classList.contains('sold'));
+    const leftVal = left.reduce((s, r) => s + item(r.item).value * S.cfg.sellback, 0);
+    $('#shActions').innerHTML = `${left.length > 1 ? `<button class="btn btn-glass" id="shSellAll">Tout revendre · +${fmt(leftVal)} EC</button>` : ''}
+      <button class="btn btn-glass" id="shKeep">${left.length ? 'Garder dans le coffre' : 'Fermer'}</button>
+      ${b.free ? '' : `<button class="btn btn-gold" id="shAgain">Rouvrir ×${results.length} · ${fmt(b.price * results.length)} EC</button>`}`;
+    $('#shKeep').onclick = closeSummary;
+    $('#shSellAll') && ($('#shSellAll').onclick = () => sell(left.map(r => r.uid)));
+    $('#shAgain') && ($('#shAgain').onclick = async () => { closeSummary(); S.count = results.length; renderPanel(); await sleep(500); openFlow(); });
+  };
+  const sell = async uids => {
+    try { const r = await api('sell', { uids }); uids.forEach(u => document.querySelector(`.it[data-uid="${u}"]`)?.classList.add('sold')); uids.forEach(u => { const bt = document.querySelector(`[data-sell="${u}"]`); if (bt) { bt.disabled = true; bt.textContent = 'Revendu'; } }); S.st = r.state; setBalance(S.st.balance); renderUser(); sfx.coin(); toast(`+${fmt(r.credited)} EC`, 'ok'); acts(); }
+    catch (e) { toast(e.message, 'bad'); }
+  };
+  document.querySelectorAll('#shItems [data-sell]').forEach(bt => bt.onclick = () => sell([bt.dataset.sell]));
+  acts();
+  $('#sheet').classList.remove('off');
+  S.mode = 'summary';
+}
+function closeSummary() {
+  $('#sheet').classList.add('off');
+  setView(VIEW_BROWSE);
+  S.mode = 'browse'; $('#panel').classList.remove('off'); arrows(true); renderPanel();
+}
+
+// ════════════════════════════════════════════════════════════
+// INTERACTIONS
+// ════════════════════════════════════════════════════════════
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+let down = null;
+canvas.addEventListener('pointerdown', e => {
+  down = { x: e.clientX, y: e.clientY, t: performance.now(), ang: ringTarget, moved: false };
+  canvas.setPointerCapture(e.pointerId); canvas.classList.add('grabbing');
+  if (S.mode === 'tear' && tearCtl) down.p0 = tearCtl.p;
+});
+canvas.addEventListener('pointermove', e => {
+  mouse.x = e.clientX / innerWidth * 2 - 1; mouse.y = e.clientY / innerHeight * 2 - 1;
+  if (!down) return;
+  const dx = e.clientX - down.x;
+  if (Math.abs(dx) > 6) down.moved = true;
+  if (S.mode === 'browse') { ringTarget = down.ang + dx * .006; }
+  else if (S.mode === 'tear' && tearCtl && dx > 0) { tearCtl.setP(Math.max(tearCtl.p, (down.p0 ?? 0) + dx / (innerWidth * (MOBILE ? .6 : .32)))); }
+});
+const up = e => {
+  if (!down) return;
+  canvas.classList.remove('grabbing');
+  if (S.mode === 'browse') {
+    if (down.moved) {
+      // Aimantation sur le socle le plus proche
+      const n = stands.length, step = Math.PI * 2 / n;
+      const idx = Math.round(-ringTarget / step);
+      selectIndex(idx);
+    } else {
+      ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      const hit = ray.intersectObjects(stands.map(s => s.grp), true)[0];
+      if (hit) { const k = stands.findIndex(s => hit.object.parent === s.grp || s.grp.getObjectById(hit.object.id)); if (k >= 0) { if (k === S.sel) openFlow(); else selectIndex(k); } }
+    }
+  } else if (S.mode === 'tear' && tearCtl) tearCtl.release();
+  down = null;
+};
+canvas.addEventListener('pointerup', up);
+canvas.addEventListener('pointercancel', up);
+addEventListener('keydown', e => {
+  if (document.querySelector('.modal.on')) return;
+  if (S.mode === 'browse') { if (e.key === 'ArrowLeft') selectIndex(S.sel - 1); if (e.key === 'ArrowRight') selectIndex(S.sel + 1); if (e.key === 'Enter') openFlow(); }
+  else if (S.mode === 'tear' && (e.key === 'Enter' || e.key === ' ')) tearCtl?.auto();
+  else if (S.mode === 'reveal' && (e.key === 'Enter' || e.key === ' ')) $('#rNext').click();
+});
+$('#prevBtn').onclick = () => selectIndex(S.sel - 1);
+$('#nextBtn').onclick = () => selectIndex(S.sel + 1);
+$('#openBtn').onclick = openFlow;
+$('#tearBtn').onclick = () => tearCtl?.auto();
+$('#allBtn').onclick = () => { autoAll = true; tearCtl?.auto(); };
+function arrows(on) { $('#prevBtn').classList.toggle('off', !on); $('#nextBtn').classList.toggle('off', !on); }
+const mouse = { x: 0, y: 0 };
+
+// ════════════════════════════════════════════════════════════
+// HUD
+// ════════════════════════════════════════════════════════════
+function renderPanel() {
+  if (!S.cfg || !stands.length) return;
+  const b = stands[S.sel].box;
+  const best = Math.max(...b.table.map(r => item(r.itemId).value));
+  $('#pEyebrow').textContent = b.free ? 'Offert toutes les 24 h' : 'Booster virtuel';
+  $('#pName').textContent = b.name; $('#pTag').textContent = b.tagline;
+  $('#sPrice').textContent = b.free ? 'Gratuit' : fmt(b.price) + ' EC';
+  $('#sEv').textContent = fmt(b.ev) + ' EC'; $('#sBest').textContent = fmt(best) + ' EC'; $('#sLots').textContent = b.table.length;
+  $('#dots').innerHTML = stands.map((s, i) => `<i class="${i === S.sel ? 'on' : ''}"></i>`).join('');
+  $('#seg').style.display = b.free ? 'none' : '';
+  $('#seg').innerHTML = [1, 2, 3, 5].map(n => `<button data-n="${n}" class="${n === S.count ? 'on' : ''}">×${n}</button>`).join('');
+  document.querySelectorAll('#seg button').forEach(bt => bt.onclick = () => { S.count = +bt.dataset.n; sfx.click(); renderPanel(); });
+  const btn = $('#openBtn');
+  btn.disabled = S.mode !== 'browse';
+  if (!S.token) btn.innerHTML = 'Se connecter pour ouvrir';
+  else if (b.free) {
+    const left = (S.st?.dailyNext || 0) - Date.now();
+    if (left > 0) { const h = Math.floor(left / 3.6e6), m = Math.floor(left / 6e4) % 60; btn.innerHTML = `Prochain coffre dans ${h} h ${String(m).padStart(2, '0')}`; btn.disabled = true; }
+    else btn.innerHTML = 'Ouvrir gratuitement';
+  } else {
+    const cost = b.price * (S.count);
+    btn.innerHTML = (S.st?.balance ?? 0) + 1e-9 >= cost ? `Ouvrir${S.count > 1 ? ' ×' + S.count : ''} · <span class="num">${fmt(cost)} EC</span>` : 'Ajouter des EC';
+  }
+}
+setInterval(() => { if (S.mode === 'browse') renderPanel(); }, 30000);
+let shownBal = 0;
+function setBalance(v) {
+  const el = $('#balN'); if (!el) return;
+  const from = shownBal; shownBal = v;
+  tween(Math.min(1200, 300 + Math.abs(v - from) * 6), e => { el.textContent = fmt(lerp(from, v, e)); });
+}
+function renderUser() {
+  const slot = $('#userSlot');
+  if (!S.token || !S.st) { slot.innerHTML = '<button class="pill glass" id="loginBtn">Connexion</button>'; $('#loginBtn').onclick = openAuth; $('#chestN').textContent = '0'; return; }
+  if (!$('#balN')) { slot.innerHTML = `<div class="pill glass bal"><i class="coin"></i><span class="num" id="balN">${fmt(S.st.balance)}</span><button class="add" id="addBtn" aria-label="Ajouter des EC">+</button></div>`; shownBal = S.st.balance; $('#addBtn').onclick = openCode; }
+  $('#chestN').textContent = S.st.inventory.length;
+}
+function bumpChest() { const b = $('#chestBtn'); b.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.15)' }, { transform: 'scale(1)' }], { duration: 500, easing: 'cubic-bezier(.34,1.56,.64,1)' }); }
+function toast(msg, cls = '') { const t = document.createElement('div'); t.className = 'toast glass ' + cls; t.textContent = msg; $('#toasts').appendChild(t); setTimeout(() => t.remove(), 3200); }
+$('#soundBtn').onclick = () => { S.muted = !S.muted; try { localStorage.setItem('vault_muted', S.muted); } catch {} $('#soundBtn').textContent = S.muted ? '🔇' : '🔊'; sfx.click(); };
+$('#soundBtn').textContent = S.muted ? '🔇' : '🔊';
+
+// Tiroir Coffre
+function renderDrawer() {
+  const inv = S.st?.inventory || [];
+  const total = inv.reduce((s, o) => s + item(o.itemId).value, 0);
+  $('#drSub').textContent = S.st ? `${inv.length} objet${inv.length > 1 ? 's' : ''} · ${fmt(total)} EC` : 'Connecte-toi pour voir ton coffre';
+  $('#drItems').innerHTML = inv.map(o => { const it = item(o.itemId), src = imgOf(it); return `<div class="it" style="--c:${TIER_COLOR[o.tier]}"><img src="${src}" alt="" loading="lazy"><b>${esc(it.name)}</b><div class="v num"><i class="coin"></i>${fmt(it.value)}</div><button class="btn btn-glass btn-sm" data-dsell="${o.uid}">Revendre +${fmt(it.value * S.cfg.sellback)}</button></div>`; }).join('') || '<p style="color:var(--mute);grid-column:1/-1;padding:20px 0">Ton coffre est vide. Ouvre un booster !</p>';
+  document.querySelectorAll('[data-dsell]').forEach(bt => bt.onclick = () => drawerSell([bt.dataset.dsell]));
+}
+async function drawerSell(uids) {
+  if (!uids.length) return;
+  try { const r = await api('sell', { uids }); S.st = r.state; setBalance(S.st.balance); renderUser(); renderDrawer(); sfx.coin(); toast(`+${fmt(r.credited)} EC`, 'ok'); }
+  catch (e) { toast(e.message, 'bad'); }
+}
+$('#chestBtn').onclick = () => { if (!S.token) return openAuth(); renderDrawer(); $('#drawer').classList.remove('off'); };
+$('#drawerX').onclick = () => $('#drawer').classList.add('off');
+$('#sellAllBtn').onclick = () => { const inv = S.st?.inventory || []; if (inv.length && confirm(`Revendre les ${inv.length} objets ?`)) drawerSell(inv.map(o => o.uid)); };
+
+// Modales
+let authMode = 'login';
+function openAuth() { setAuth('login'); $('#mAuth').classList.add('on'); }
+function setAuth(m) { authMode = m; const reg = m === 'register'; $('#aTitle').textContent = reg ? 'Créer un compte' : 'Connexion'; $('#aName').hidden = !reg; $('#aSubmit').textContent = reg ? 'Créer mon compte' : 'Se connecter'; $('#aSwT').textContent = reg ? 'Déjà inscrit ?' : 'Pas de compte ?'; $('#aSw').textContent = reg ? 'Se connecter' : 'Créer un compte'; $('#aErr').textContent = ''; }
+$('#aSw').onclick = () => setAuth(authMode === 'login' ? 'register' : 'login');
+$('#aForm').onsubmit = async e => {
+  e.preventDefault();
+  const fd = Object.fromEntries(new FormData(e.target));
+  if (authMode === 'register' && !fd.name?.trim()) { $('#aErr').textContent = 'Indique ton prénom'; return; }
+  try {
+    const r = await fetch(authMode === 'login' ? '/api/login' : '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) });
+    const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Erreur');
+    S.token = j.token; try { localStorage.setItem('edn_token', j.token); localStorage.setItem('edn_user', JSON.stringify(j.user)); } catch {}
+    $('#mAuth').classList.remove('on'); e.target.reset();
+    await loadState(); toast(`Bienvenue ${j.user.name.split(' ')[0]}`, 'ok');
+  } catch (err) { $('#aErr').textContent = err.message; }
+};
+function openCode() { if (!S.token) return openAuth(); $('#cErr').textContent = ''; $('#mCode').classList.add('on'); }
+$('#cForm').onsubmit = async e => {
+  e.preventDefault();
+  try { const r = await api('redeem', { code: e.target.code.value }); $('#mCode').classList.remove('on'); e.target.reset(); S.st = r.state; setBalance(S.st.balance); renderUser(); renderPanel(); sfx.coin(); toast(`+${fmt(r.credited)} EC crédités`, 'ok'); }
+  catch (err) { $('#cErr').textContent = err.message; }
+};
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) m.classList.remove('on'); }));
+function logout() { S.token = null; S.st = null; try { localStorage.removeItem('edn_token'); } catch {} $('#userSlot').innerHTML = ''; renderUser(); renderPanel(); }
+async function loadState() { if (!S.token) { renderUser(); return; } try { S.st = await api('state'); } catch {} renderUser(); renderPanel(); }
+
+// ════════════════════════════════════════════════════════════
+// BOUCLE DE RENDU
+// ════════════════════════════════════════════════════════════
+const clock = new THREE.Clock();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(.05, clock.getDelta()), t = clock.elapsedTime;
+  runTweens(now);
+  // Carrousel
+  ringAngle = lerp(ringAngle, ringTarget, 1 - Math.pow(.0015, dt));
+  ring.rotation.y = ringAngle;
+  stands.forEach((s, i) => {
+    const sel = i === S.sel;
+    s.pack.position.y = 2.2 + Math.sin(t * 1.3 + i) * .06;
+    s.pack.rotation.y = Math.sin(t * .6 + i) * .35;
+    s.halo.rotation.x = Math.PI / 2 + Math.sin(t * .8 + i) * .2; s.halo.rotation.z = t * .4;
+    s.glow.material.opacity = lerp(s.glow.material.opacity, sel ? .75 : .22, .08);
+    s.beamMat.uniforms.o.value = lerp(s.beamMat.uniforms.o.value, sel ? .45 : .12, .08);
+  });
+  // Caméra : suit sa cible + léger parallaxe souris + tremblement
+  cam.pos.lerp(cam.tPos, 1 - Math.pow(.02, dt)); cam.look.lerp(cam.tLook, 1 - Math.pow(.02, dt));
+  camera.position.copy(cam.pos).add(new THREE.Vector3(mouse.x * .35, -mouse.y * .18, 0));
+  if (cam.shake > .001) { camera.position.x += (Math.random() - .5) * cam.shake; camera.position.y += (Math.random() - .5) * cam.shake; cam.shake *= .9; }
+  camera.lookAt(cam.look);
+  spot.target.position.set(0, 2, RING_R);
+  rays.lookAt(camera.position); rays.rotateZ(t * .25);
+  scene.children.forEach(o => { if (o.userData?.spin) o.rotation.y = Math.sin(t * 1.4) * .35; });
+  dust.uniforms.t.value = t;
+  updateBursts(dt);
+  composer.render();
+}
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w, h);
+  camera.aspect = w / h; camera.fov = w < h ? 58 : (MOBILE ? 52 : 40); camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+
+// ════════════════════════════════════════════════════════════
+// DÉMARRAGE
+// ════════════════════════════════════════════════════════════
+(async function boot() {
+  window.__v3d = true;
+  resize();
+  requestAnimationFrame(frame);
+  try { S.cfg = await fetch('/api/vault?q=config').then(r => { if (!r.ok) throw 0; return r.json(); }); }
+  catch { $('#fallback').classList.add('on'); return; }
+  // Les polices doivent être chargées avant de dessiner les textures des sachets
+  try { await Promise.all([foilReady, document.fonts.load('700 74px Fraunces'), document.fonts.load('800 104px Fraunces'), document.fonts.load('800 20px Manrope')]); } catch {}
+  // Ordre : boosters payants d'abord, coffre gratuit à la fin
+  const boxes = [...S.cfg.boxes.filter(b => !b.free), ...S.cfg.boxes.filter(b => b.free)];
+  boxes.forEach((b, i) => stands.push(buildStand(b, i, boxes.length)));
+  const start = Math.max(0, boxes.findIndex(b => b.id === (new URLSearchParams(location.search).get('box') || 'japan')));
+  selectIndex(start, true); ringAngle = ringTarget;
+  await loadState();
+  S.mode = 'browse'; renderPanel();
+  // Laisse le temps au panorama de charger avant de lever le rideau
+  await Promise.race([allLoaded, sleep(8000)]);
+  $('#loader').classList.add('done');
+})();
+</script>
+</body>
+</html>

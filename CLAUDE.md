@@ -41,6 +41,9 @@ site-premium-tcg-style-apple/
 ├── package.json        ← Deps Node (stripe)
 ├── vault.html          ← Eden Vault : jeu d'ouverture de box (monnaie virtuelle EC)
 ├── lib/vault-data.js   ← Catalogue du Vault : lots, box, probabilités (source unique)
+├── vault3d.html        ← Eden Vault 3D « la chambre forte » (Three.js, même API que /vault)
+├── img/packs/          ← Visuels officiels des sachets (JP pokemon-card.com, CN pokemon.cn)
+├── img/vault3d/        ← Décor 3D : panorama (Canva + extension Adobe) et texture foil (Canva)
 ├── CLAUDE.md           ← Ce fichier
 └── api/
     ├── vault.js                ← Serveur du Vault (tirages, solde, codes, upgrade, admin)
@@ -204,6 +207,7 @@ Navigation via `go(pageName)`. Pages : `home`, `catalog`, `auth`, `dashboard`, `
 - **Provably fair** : `HMAC_SHA256(serverSeed, "clientSeed:nonce")` → 52 bits / 2^52. Hash du seed affiché avant, seed révélé à la rotation.
 - **Endpoint unique** `/api/vault` : `GET ?q=config|feed`, `POST {action: state|open|sell|upgrade|redeem|ship|rotate_seed|admin_*}`.
 - **Prérequis Vercel** : Vercel KV (Upstash Redis) connecté + `JWT_SECRET` + `ADMIN_CODE`.
+- **Version 3D** `/vault3d` : carrousel de socles, sachets 3D à déchirer, lot réel qui sort du sachet. Bloom + miroir au sol désactivé sur mobile.
 
 ## Contact
 Email : Edenprojectcompany@gmail.com
