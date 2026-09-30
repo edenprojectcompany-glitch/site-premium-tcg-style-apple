@@ -201,6 +201,7 @@ a{color:inherit;text-decoration:none}
     <a class="brand" href="/vault3d"><b>Eden Vault</b><small>LA CHAMBRE FORTE</small></a>
     <div class="sp"></div>
     <a class="pill glass hide-m" href="/vault" title="Version classique">Version classique ↗</a>
+    <button class="pill glass" id="liteBtn" title="Change la qualité du rendu 3D"></button>
     <button class="pill glass" id="soundBtn" aria-label="Son">🔊</button>
     <button class="pill glass" id="chestBtn">Coffre <span class="badge" id="chestN">0</span></button>
     <div id="userSlot"></div>
@@ -356,7 +357,18 @@ const vibrate = p => { try { navigator.vibrate && navigator.vibrate(p); } catch 
 // MOTEUR 3D
 // ════════════════════════════════════════════════════════════
 const canvas = $('#c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+// Mode léger : rendu direct sans post-traitement ni miroir (forcé via ?lite=1, le bouton, ou si le GPU ne gère pas les buffers flottants)
+const LITE = (() => {
+  try {
+    const q = new URLSearchParams(location.search).get('lite');
+    if (q === '1') { localStorage.setItem('vault3d_lite', '1'); return true; }
+    if (q === '0') { localStorage.removeItem('vault3d_lite'); return false; }
+    if (localStorage.getItem('vault3d_lite') === '1') return true;
+  } catch {}
+  const gl = document.createElement('canvas').getContext('webgl2');
+  return !gl || !gl.getExtension('EXT_color_buffer_float');
+})();
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: LITE, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, MOBILE ? 1.5 : 1.75));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -375,12 +387,15 @@ const loader = new THREE.TextureLoader(manager); loader.setCrossOrigin('anonymou
 const lazyLoader = new THREE.TextureLoader(); lazyLoader.setCrossOrigin('anonymous');
 
 // Post-traitement : bloom sur les lumières et reflets
-const rt = new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: MOBILE ? 0 : 4 });
-const composer = new EffectComposer(renderer, rt);
-composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .6, .5, .88);
-composer.addPass(bloom);
-composer.addPass(new OutputPass());
+let composer = null, bloom = { strength: 0, setSize() {} };
+if (!LITE) {
+  const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: MOBILE ? 0 : 4 });
+  composer = new EffectComposer(renderer, rt);
+  composer.addPass(new RenderPass(scene, camera));
+  bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), .6, .5, .88);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+}
 const BLOOM_BASE = .6;
 
 // ── Décor : panorama Canva étendu par Adobe, sur un cylindre ─────
@@ -397,7 +412,7 @@ pano.wrapS = THREE.RepeatWrapping; pano.repeat.x = -1; pano.offset.x = 1;
 
 // ── Sol : miroir + vernis sombre + incrustations dorées ──────────
 const RING_R = 4.6;
-if (!MOBILE) {
+if (!MOBILE && !LITE) {
   const mirror = new Reflector(new THREE.CircleGeometry(40, 64), { clipBias: .003, textureWidth: innerWidth * .6, textureHeight: innerHeight * .6, color: 0x55555f });
   mirror.rotation.x = -Math.PI / 2; mirror.position.y = -.001;
   scene.add(mirror);
@@ -992,11 +1007,18 @@ function frame(now) {
   scene.children.forEach(o => { if (o.userData?.spin) o.rotation.y = Math.sin(t * 1.4) * .35; });
   dust.uniforms.t.value = t;
   updateBursts(dt);
-  composer.render();
+  // Taille réelle du canvas vérifiée à chaque image (zoom navigateur, écran externe, barre d'outils…)
+  if (canvas.clientWidth !== lastSize.w || canvas.clientHeight !== lastSize.h || devicePixelRatio !== lastSize.dpr) resize();
+  if (composer) composer.render(); else renderer.render(scene, camera);
 }
+const lastSize = { w: 0, h: 0, dpr: 0 };
 function resize() {
-  const w = innerWidth, h = innerHeight;
-  renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w, h);
+  const w = canvas.clientWidth || innerWidth, h = canvas.clientHeight || innerHeight;
+  lastSize.w = w; lastSize.h = h; lastSize.dpr = devicePixelRatio;
+  const pr = Math.min(devicePixelRatio, MOBILE ? 1.5 : 1.75);
+  renderer.setPixelRatio(pr);
+  renderer.setSize(w, h, false);
+  if (composer) { composer.setPixelRatio(pr); composer.setSize(w, h); }
   camera.aspect = w / h; camera.fov = w < h ? 58 : (MOBILE ? 52 : 40); camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize);
@@ -1006,6 +1028,8 @@ addEventListener('resize', resize);
 // ════════════════════════════════════════════════════════════
 (async function boot() {
   window.__v3d = true;
+  $('#liteBtn').textContent = LITE ? 'Mode HD' : 'Mode léger';
+  $('#liteBtn').onclick = () => { location.search = LITE ? '?lite=0' : '?lite=1'; };
   resize();
   requestAnimationFrame(frame);
   try { S.cfg = await fetch('/api/vault?q=config').then(r => { if (!r.ok) throw 0; return r.json(); }); }
