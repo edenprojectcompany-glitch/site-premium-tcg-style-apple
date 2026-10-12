@@ -639,18 +639,55 @@ if (!LITE) {
 }
 const BLOOM_BASE = .38;
 
-// ── Décor : panorama Canva étendu par Adobe, sur un cylindre ─────
-const pano = loader.load(MOBILE ? '/img/vault3d/pano-sm.jpg' : '/img/vault3d/pano.jpg', t => {
-  // Le panorama de la salle devient la carte de reflets : le métal des sachets reflète la vraie chambre forte
-  const eq = t.clone(); eq.mapping = THREE.EquirectangularReflectionMapping; eq.repeat.set(1, 1); eq.offset.set(0, 0); eq.wrapS = THREE.ClampToEdgeWrapping; eq.needsUpdate = true;
+// ── Décor : Mew dans les flammes, animé, sur un cylindre ─────────
+const pano = loader.load(MOBILE ? '/img/vault3d/mew-sm.jpg' : '/img/vault3d/mew.jpg', t => {
+  // Le décor devient la carte de reflets : le métal des sachets reflète les flammes
+  const eq = t.clone(); eq.mapping = THREE.EquirectangularReflectionMapping; eq.needsUpdate = true;
   scene.environment = pmrem.fromEquirectangular(eq).texture;
 });
 pano.colorSpace = THREE.SRGBColorSpace;
-pano.wrapS = THREE.RepeatWrapping; pano.repeat.x = -1; pano.offset.x = 1;
+const panoU = { map: { value: pano }, t: { value: 0 }, k: { value: 1 }, ky: { value: 1 }, ox: { value: 0 }, oy: { value: 0 }, dim: { value: .78 } };
 {
-  const L = Math.PI * 1.22, R = 30, H = R * L / (4096 / 1152);
+  const L = Math.PI * 1.22, R = 30, H = 32;
+  // Image 16:9 sur l'arc, Mew décalé à droite du socle central pour rester visible ; au-delà, flammes en miroir qui s'éteignent
+  const IMG_W = R * L / 1.5;
+  panoU.k.value = R * L / IMG_W; panoU.ky.value = H / (IMG_W / (2000 / 1125)); panoU.oy.value = -.055;
   const geo = new THREE.CylinderGeometry(R, R, H, 96, 1, true, Math.PI - L / 2, L);
-  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: pano, side: THREE.BackSide, color: 0x999999, fog: false })); window.__panoMat = m.material;
+  const mat = new THREE.ShaderMaterial({
+    uniforms: panoU, side: THREE.BackSide, fog: false, depthWrite: false,
+    vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
+    fragmentShader: `uniform sampler2D map; uniform float t, k, ky, ox, oy, dim; varying vec2 vUv;
+      float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+        return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
+      float fbm(vec2 p){ float s = 0., a = .5; for (int i = 0; i < 4; i++) { s += a * n(p); p = p * 2.03 + 17.1; a *= .5; } return s; }
+      vec2 mirror(vec2 p){ vec2 m = mod(p, 2.); return mix(m, 2. - m, step(1., m)); }
+      void main(){
+        vec2 p = vec2((1. - vUv.x - .5) * k + .5 + ox, (vUv.y - .5) * ky + .5 + oy);
+        // Mew : zone ovale douce qui flotte et respire, sans déformation
+        vec2 mc = vec2(.487, .575), md = (p - mc) / vec2(.085, .2);
+        float mew = 1. - smoothstep(.55, 1., length(md));
+        vec2 bob = vec2(sin(t * .55) * .0035, sin(t * .9) * .009 + sin(t * 2.1) * .0015);
+        vec2 q = p - bob * mew;
+        // Flammes : chaleur qui monte, ondulations plus fortes loin du centre
+        vec4 c0 = texture2D(map, mirror(p));
+        float warm = clamp((c0.r - c0.b) * 1.6, 0., 1.) * (1. - mew);
+        float edge = .45 + .55 * smoothstep(.12, .5, abs(p.x - .5) + abs(p.y - .55) * .6);
+        vec2 w = vec2(fbm(p * vec2(5., 3.) + vec2(0., -t * .32)) - .5, fbm(p * vec2(4., 6.) + vec2(3.7, -t * .45)) - .5);
+        q += w * .016 * warm * edge;
+        vec3 c = texture2D(map, mirror(q)).rgb;
+        // Scintillement des braises (orange/rouge uniquement)
+        float fl = fbm(p * vec2(7., 9.) + vec2(t * .08, -t * .7));
+        c *= 1. + (fl - .45) * .55 * warm * edge;
+        // Lueur qui pulse doucement autour de Mew
+        float aura = (1. - smoothstep(.0, 1.25, length((p - mc) / vec2(.16, .3)))) * (.5 + .5 * sin(t * 1.3));
+        c += vec3(1., .8, .62) * aura * .09;
+        vec2 o = max(max(-p, p - 1.), 0.);
+        c *= exp(-o.x * 5.) * exp(-o.y * 4.);
+        gl_FragColor = vec4(c * dim, 1.);
+      }`,
+  });
+  const m = new THREE.Mesh(geo, mat); window.__panoMat = mat;
   m.position.set(0, 3.2 - H * .05, -4);
   scene.add(m);
 }
@@ -699,10 +736,10 @@ const dust = (() => {
   const m = new THREE.ShaderMaterial({
     uniforms: { t: { value: 0 }, pr: { value: renderer.getPixelRatio() } },
     vertexShader: `attribute float seed; uniform float t; uniform float pr; varying float a;
-      void main(){ vec3 q=position; q.y=mod(q.y+t*(.05+seed*.08),9.0); q.x+=sin(t*.2+seed*40.)*.3;
+      void main(){ vec3 q=position; q.y=mod(q.y+t*(.12+seed*.22),9.0); q.x+=sin(t*.35+seed*40.)*.45;
       vec4 mv=modelViewMatrix*vec4(q,1.); gl_Position=projectionMatrix*mv; gl_PointSize=(1.+seed*2.2)*pr*(8./-mv.z);
       a=(.3+.7*sin(t*(1.+seed)+seed*30.))*.55; }`,
-    fragmentShader: `varying float a; void main(){ float d=length(gl_PointCoord-.5); gl_FragColor=vec4(1.,.9,.72,smoothstep(.5,0.,d)*a); }`,
+    fragmentShader: `varying float a; void main(){ float d=length(gl_PointCoord-.5); gl_FragColor=vec4(mix(vec3(1.,.45,.12),vec3(1.,.85,.55),a*1.6),smoothstep(.5,0.,d)*a*1.3); }`,
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   });
   const pts = new THREE.Points(g, m); scene.add(pts); return m;
@@ -1560,7 +1597,9 @@ function frame(now) {
   const spinning = scene.children.find(o => o.userData?.spin);
   showcase.update(t, spinning);
   roomDim = lerp(roomDim, roomDimT, 1 - Math.pow(.03, dt));
-  if (window.__panoMat) window.__panoMat.color.setScalar(.6 * (1 - roomDim * .55));
+  panoU.dim.value = .78 * (1 - roomDim * .55); panoU.t.value = t;
+  // Mew décalé à droite sur écran large (libère le booster central), recentré en portrait
+  panoU.ox.value = -.2 * clamp((camera.aspect - 1.15) / .63, 0, 1);
   rimL.intensity = rimR.intensity = 5 * (1 - roomDim * .7); spot.intensity = 26 * (1 - roomDim * .6);
   scene.children.forEach(o => { if (o.userData?.spin) { o.rotation.y = Math.sin(t * .9) * .4; o.position.y = STAGE.y + .38 + Math.sin(t * 1.3) * .04; } });
   dust.uniforms.t.value = t;
